@@ -76,7 +76,9 @@ export function Progress({ done, total, label }: ProgressProps) {
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between text-sm">
         <span className="font-medium">{label}</span>
-        <span className="text-muted">
+        {/* Счёт объявляется вслух по мере роста: генерация идёт минуту, и без
+            этого незрячий пользователь не знает, движется ли дело. */}
+        <span className="text-muted" aria-live="polite">
           {done} из {total}
         </span>
       </div>

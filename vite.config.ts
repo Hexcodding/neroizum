@@ -22,7 +22,19 @@ function resolveChunk(moduleId: string): string | undefined {
   return "vendor";
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // Признак админской сборки задаётся режимом, а не файлом окружения: файл
+  // окружения легко забыть на боевом сервере и выложить панель управления
+  // вместе с приложением для клиентов. Режим виден прямо в команде сборки.
+  //
+  // В разработке панель доступна всегда — иначе её не проверить локально.
+  // Значение подставляется строкой, поэтому в клиентской сборке ветка с
+  // загрузкой панели становится недостижимой и её код в бандл не входит.
+  define: {
+    "import.meta.env.VITE_ADMIN": JSON.stringify(
+      mode === "admin" || mode === "development" ? "on" : "",
+    ),
+  },
   server: {
     port: 8080,
     strictPort: false,
@@ -45,4 +57,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

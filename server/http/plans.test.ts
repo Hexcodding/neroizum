@@ -4,6 +4,7 @@ import { hashSecret } from "../access/keys.ts";
 import {
   createMemoryAttemptStore,
   createMemoryLicenseStore,
+  createMemoryQuotaStore,
   makeLicense,
 } from "../access/__fixtures__/memory-stores.ts";
 import { corsHeaders } from "./cors.ts";
@@ -79,8 +80,14 @@ async function makeDeps() {
   );
   const { sessionToken } = (await activation.json()) as { sessionToken: string };
   const store = makeStore();
+  const quotaStore = createMemoryQuotaStore(20);
 
-  return { sessionToken, store, deps: { session, store } };
+  return {
+    sessionToken,
+    store,
+    quotaStore,
+    deps: { session, store, quota: { store: quotaStore, today: TODAY } },
+  };
 }
 
 describe("мои планы", () => {
@@ -182,6 +189,32 @@ describe("мои планы", () => {
     );
 
     expect(response.status).toBe(404);
+  });
+
+  it("остаток генераций считается по календарному месяцу", async () => {
+    const { deps, sessionToken, quotaStore } = await makeDeps();
+    await quotaStore.reserve("license-1", "2026-03");
+    await quotaStore.reserve("license-1", "2026-03");
+    // Генерация прошлого месяца остаток этого не уменьшает.
+    await quotaStore.reserve("license-1", "2026-02");
+
+    const response = await handlePlans(post({ action: "quota" }), sessionToken, deps, RESPONSE);
+
+    expect(await response.json()).toEqual({
+      quota: { used: 2, limit: 20, left: 18 },
+      subscriptionUntil: "2026-12-31",
+    });
+  });
+
+  it("остаток чужой лицензии не виден", async () => {
+    const { deps, sessionToken, quotaStore } = await makeDeps();
+    await quotaStore.reserve("license-другой", "2026-03");
+
+    const response = await handlePlans(post({ action: "quota" }), sessionToken, deps, RESPONSE);
+
+    expect((await response.json()) as { quota: { used: number } }).toMatchObject({
+      quota: { used: 0 },
+    });
   });
 
   it("неизвестное действие отклоняется", async () => {

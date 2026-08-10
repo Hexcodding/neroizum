@@ -29,6 +29,27 @@ export async function logout(token: string): Promise<void> {
   await callFunction<{ ok: boolean }>("activate", {}, { token, path: "/logout" });
 }
 
+export interface QuotaStatus {
+  readonly used: number;
+  readonly limit: number;
+  readonly left: number;
+}
+
+/**
+ * Остаток генераций. Спрашивается у сервера, а не считается в браузере:
+ * генерации расходуются и с другого устройства, а месяц заканчивается по
+ * календарю сервера, а не по часовому поясу телефона.
+ */
+export async function fetchQuota(
+  token: string,
+): Promise<{ readonly quota: QuotaStatus; readonly subscriptionUntil: string }> {
+  return await callFunction<{ quota: QuotaStatus; subscriptionUntil: string }>(
+    "plans",
+    { action: "quota" },
+    { token },
+  );
+}
+
 export interface PlanSummary {
   readonly id: string;
   readonly title: string;

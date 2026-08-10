@@ -12,12 +12,16 @@ import { PlanForm } from "@/features/plan-form/PlanForm";
 import { useGeneration } from "@/features/generate-plan/useGeneration";
 import { useAccess } from "@/features/access/useAccess";
 import { GenerationScreen } from "@/widgets/generation/GenerationScreen";
+import { Intro } from "@/features/onboarding/Intro";
+import { markIntroSeen, wasIntroSeen } from "@/features/onboarding/intro-state";
+import { Notice } from "@/shared/ui/Feedback";
 
 export default function CreatePlanPage() {
-  const { session, expire } = useAccess();
+  const { session, expire, quota, refreshQuota } = useAccess();
   const generation = useGeneration();
   const navigate = useNavigate();
   const [request, setRequest] = useState<GenerationRequest | null>(null);
+  const [intro, setIntro] = useState(() => !wasIntroSeen());
 
   // Сессия закончилась во время работы — возвращаем на вход. Только по этой
   // причине: остальные ошибки лечатся повтором, а не выходом.
@@ -25,13 +29,32 @@ export default function CreatePlanPage() {
     if (generation.error?.code === "NO_SESSION") expire();
   }, [generation.error, expire]);
 
+  // Остаток перечитывается, когда работа закончилась — и после успеха, и после
+  // сбоя: при сбое квота возвращается клиенту, и он должен это увидеть.
+  useEffect(() => {
+    if (!generation.running && request !== null) void refreshQuota();
+  }, [generation.running, request, refreshQuota]);
+
   const run = (next: GenerationRequest): void => {
     if (session === null) return;
     setRequest(next);
     void generation.start(session.token, next);
   };
 
+  if (intro && request === null) {
+    return (
+      <Intro
+        onStart={() => {
+          markIntroSeen();
+          setIntro(false);
+        }}
+      />
+    );
+  }
+
   if (request === null) {
+    const empty = quota !== null && quota.left === 0;
+
     return (
       <div className="flex flex-col gap-5">
         <header className="flex flex-col gap-1">
@@ -40,7 +63,15 @@ export default function CreatePlanPage() {
             Ответьте на несколько вопросов — получите готовые посты с датами публикации.
           </p>
         </header>
-        <PlanForm onSubmit={run} busy={generation.running} />
+
+        {empty && (
+          <Notice tone="info" title="Планы на этот месяц закончились">
+            Вы использовали все {String(quota.limit)} планов. Первого числа счётчик обнулится, а
+            сохранённые планы останутся на месте. Нужно раньше — напишите нам, поднимем лимит.
+          </Notice>
+        )}
+
+        <PlanForm onSubmit={run} busy={generation.running || empty} />
       </div>
     );
   }

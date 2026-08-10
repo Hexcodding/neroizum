@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/Button";
 import { ThemeToggle } from "@/shared/ui/ThemeToggle";
 import { cn } from "@/shared/lib/cn";
 import { useAccess } from "@/features/access/useAccess";
+import { QuotaBadge } from "@/features/access/QuotaBadge";
 
 const LINKS = [
   { to: "/", label: "Новый план" },
@@ -34,6 +35,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={({ isActive }) =>
                   cn(
                     "flex min-h-touch items-center rounded-lg px-3 text-sm transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                     isActive ? "bg-secondary font-medium" : "text-muted hover:text-foreground",
                   )
                 }
@@ -44,8 +47,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            <QuotaBadge className="hidden sm:inline" />
             {session !== null && (
-              <span className="hidden font-mono text-xs text-muted sm:inline">
+              <span className="hidden font-mono text-xs text-muted md:inline">
                 {session.clientId}
               </span>
             )}
@@ -65,9 +69,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">{children}</main>
 
-      <footer className="border-t border-border/60 px-4 py-4 text-center text-xs text-muted">
-        {session !== null && <>Доступ до {session.subscriptionUntil}. </>}
-        Вопрос или пожелание — напишите нам, отвечаем сами.
+      <footer className="flex flex-col items-center gap-1 border-t border-border/60 px-4 py-4 text-center text-xs text-muted">
+        {/* На узком экране остатка в заголовке не видно — здесь он есть всегда. */}
+        <QuotaBadge className="sm:hidden" />
+        <span>
+          {session !== null && <>Доступ до {session.subscriptionUntil}. Ваш номер {session.clientId}. </>}
+          Вопрос или пожелание — напишите нам, отвечаем сами.
+        </span>
       </footer>
     </div>
   );

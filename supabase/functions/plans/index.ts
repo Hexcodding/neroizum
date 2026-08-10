@@ -30,6 +30,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
         remove: (licenseId: string, planId: string) =>
           deletePlan(context.config.db, licenseId, planId),
       },
+      quota: { store: context.quotaStore, today: context.today },
     },
     response,
   );

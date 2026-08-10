@@ -30,10 +30,13 @@ export default {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
         },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
+        // «muted» здесь — цвет второстепенного текста, а не приглушённая
+        // плашка. Так было в шаблоне shadcn, и это стоило дорого: `text-muted`
+        // означал цвет фона, отличался от фона на семь процентов яркости, и вся
+        // мелкая подпись в тёмной теме читалась с трудом. Плашка называется
+        // отдельно и явно, чтобы перепутать было нельзя.
+        muted: "hsl(var(--muted-foreground))",
+        "muted-surface": "hsl(var(--muted))",
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",

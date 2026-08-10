@@ -56,18 +56,21 @@ export function PlanView({ title, posts, onSavePost, children }: PlanViewProps) 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded-lg border border-border/70 p-0.5" role="tablist">
+        {/* Две кнопки-переключателя, а не вкладки: полноценная разметка вкладок
+            требует связанных панелей и обхода стрелками, а половинчатая мешает
+            экранному диктору сильнее, чем её отсутствие. */}
+        <div className="flex rounded-lg border border-border/70 p-0.5" role="group" aria-label="Как показать план">
           {(["list", "calendar"] as const).map((value) => (
             <button
               key={value}
               type="button"
-              role="tab"
-              aria-selected={mode === value}
+              aria-pressed={mode === value}
               onClick={() => {
                 setMode(value);
               }}
               className={cn(
                 "min-h-touch rounded-md px-4 text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 mode === value ? "bg-secondary" : "text-muted hover:text-foreground",
               )}
             >

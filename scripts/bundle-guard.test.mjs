@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findMarkers, PROMPT_MARKERS } from "./bundle-guard.mjs";
+import { ADMIN_MARKERS, findMarkers, PROMPT_MARKERS } from "./bundle-guard.mjs";
 
 describe("поиск утечки", () => {
   // Логика поиска проверяется на своих маркерах, чтобы тест не падал каждый
@@ -29,5 +29,23 @@ describe("список маркеров по умолчанию", () => {
 
   it("используется, когда маркеры не переданы явно", () => {
     expect(findMarkers("... Zero Click Value ...")).toContain("Zero Click Value");
+  });
+});
+
+describe("маркеры панели управления", () => {
+  it("список не пуст: иначе клиентская сборка проверялась бы ни на что", () => {
+    expect(ADMIN_MARKERS.length).toBeGreaterThan(3);
+  });
+
+  it("ловят и разметку панели, и её вызовы к серверу", () => {
+    const chunk = `const t="Выдать доступ";fetch(u,{body:JSON.stringify({action:"reset-session"})})`;
+    expect(findMarkers(chunk, ADMIN_MARKERS)).toEqual(
+      expect.arrayContaining(["Выдать доступ", "reset-session"]),
+    );
+  });
+
+  it("не срабатывают на клиентском коде", () => {
+    const chunk = `const t="Мои планы";const u="Осталось 18 из 20";`;
+    expect(findMarkers(chunk, ADMIN_MARKERS)).toEqual([]);
   });
 });

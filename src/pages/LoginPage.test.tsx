@@ -15,6 +15,8 @@ const logout = vi.fn();
 vi.mock("@/shared/api/endpoints", () => ({
   activate: (key: string) => activate(key) as unknown,
   logout: (token: string) => logout(token) as unknown,
+  // Остаток генераций провайдер запрашивает сам, как только появилась сессия.
+  fetchQuota: () => Promise.resolve({ quota: { used: 0, limit: 20, left: 20 }, subscriptionUntil: "2026-12-31" }),
 }));
 
 const { AccessProvider } = await import("@/features/access/AccessProvider");

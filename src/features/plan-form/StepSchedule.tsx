@@ -5,7 +5,7 @@
 import { formatHumanDate, parseIsoDate, postCount, todayIso } from "@contracts";
 import { Field } from "@/shared/ui/Field";
 import { Input } from "@/shared/ui/Input";
-import { SingleChoice } from "@/shared/ui/Choice";
+import { CheckboxCard, SingleChoice } from "@/shared/ui/Choice";
 import { FREQUENCY_OPTIONS, PERIOD_OPTIONS, toPeriodDays, toPostsPerWeek } from "@/entities/plan/options";
 import type { PlanDraftState } from "./usePlanDraft";
 
@@ -66,23 +66,14 @@ export function StepSchedule({ state }: { state: PlanDraftState }) {
         {parseIsoDate(draft.startDate) !== null && <> — с {formatHumanDate(draft.startDate)}</>}.
       </p>
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/70 p-3">
-        <input
-          type="checkbox"
-          checked={draft.infoPlanMode}
-          onChange={(event) => {
-            set("infoPlanMode", event.target.checked);
-          }}
-          className="mt-0.5 h-5 w-5 rounded border-border accent-primary"
-        />
-        <span className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium">Информационный режим</span>
-          <span className="text-xs leading-relaxed text-muted">
-            Посты пишутся как рассказ о деятельности, без рекламных призывов и обещаний результата.
-            Нужен там, где реклама ограничена законом: медицина, финансы, образование.
-          </span>
-        </span>
-      </label>
+      <CheckboxCard
+        label="Информационный режим"
+        description="Посты пишутся как рассказ о деятельности, без рекламных призывов и обещаний результата. Нужен там, где реклама ограничена законом: медицина, финансы, образование."
+        checked={draft.infoPlanMode}
+        onChange={(checked) => {
+          set("infoPlanMode", checked);
+        }}
+      />
     </div>
   );
 }

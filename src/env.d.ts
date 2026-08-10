@@ -13,6 +13,11 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY: string;
   /** `development` или `production`. От этого зависит доступность служебных экранов. */
   readonly VITE_APP_ENV?: string;
+  /**
+   * `on` включает панель управления доступами. В клиентской сборке не задаётся
+   * никогда: без признака код панели в бандл не попадает вовсе.
+   */
+  readonly VITE_ADMIN?: string;
 }
 
 interface ImportMeta {
