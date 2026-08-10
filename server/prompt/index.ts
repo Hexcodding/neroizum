@@ -16,6 +16,7 @@ import { buildFunnelBlock } from "./blocks/funnel.ts";
 import { buildRubricsBlock } from "./blocks/rubrics.ts";
 import { buildPlatformsBlock } from "./blocks/platforms.ts";
 import { ANTI_TEASER_BLOCK } from "./blocks/anti-teaser.ts";
+import { VOICE_BLOCK } from "./blocks/voice.ts";
 import { buildVisualBlock } from "./blocks/visual.ts";
 import { buildComplianceBlock } from "./blocks/compliance.ts";
 import { buildScheduleBlock } from "./blocks/schedule.ts";
@@ -56,6 +57,7 @@ export function buildPrompt(
     buildRubricsBlock(),
     buildPlatformsBlock(request.platforms),
     ANTI_TEASER_BLOCK,
+    VOICE_BLOCK,
     buildVisualBlock(),
     buildComplianceBlock(request.infoPlanMode),
     buildScheduleBlock(slots),
@@ -76,4 +78,5 @@ export { PLAN_RESPONSE_SCHEMA } from "./core/output-contract.ts";
 export { CONTENT_MIX_BY_GOAL, expectedTypeCounts } from "./blocks/funnel.ts";
 export { VISUAL_STYLES, VISUAL_STYLE_IDS, MAX_STYLE_REPEATS_IN_ROW } from "./blocks/visual.ts";
 export { RUBRICS, MAX_RUBRIC_REPEATS_IN_ROW } from "./blocks/rubrics.ts";
+export { CLICHE_RULES, findCliche } from "./blocks/voice.ts";
 export { INFO_PLAN_FORBIDDEN_WORDS } from "./blocks/compliance.ts";

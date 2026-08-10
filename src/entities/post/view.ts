@@ -65,9 +65,30 @@ export function typeTone(type: string): string {
   }
 }
 
+function comparable(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+/**
+ * Призыв, который стоит показать отдельной строкой.
+ *
+ * По контракту готовый текст поста заканчивается призывом, и поле cta повторяет
+ * его для таблицы. Пока интерфейс печатал оба подряд, читатель видел один и тот
+ * же вопрос дважды — и в посте, и в буфере обмена, и в выгрузке. Отдельная
+ * строка нужна только тогда, когда призыва в тексте нет.
+ */
+export function separateCta(post: GeneratedPost): string {
+  const cta = post.cta.trim();
+  if (cta.length === 0) return "";
+  return comparable(post.postContent).includes(comparable(cta)) ? "" : cta;
+}
+
 /** Что попадает в буфер обмена: текст, призыв, хештеги — то, что человек вставит. */
 export function postToClipboard(post: GeneratedPost): string {
-  return [post.postContent, post.cta, post.hashtags.join(" ")]
+  return [post.postContent, separateCta(post), post.hashtags.join(" ")]
     .filter((part) => part.trim().length > 0)
     .join("\n\n");
 }

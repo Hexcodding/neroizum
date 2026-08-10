@@ -85,6 +85,17 @@ function withTimeout(request: AiRequest): { signal: AbortSignal; done: () => voi
   };
 }
 
+/**
+ * Бюджет размышления для моделей 2.5. Раньше здесь стоял ноль — «размышления
+ * съедают бюджет вывода, а нам нужен объём ответа». Экономия вышла дороже
+ * покупки: без размышления модель пишет первое, что пришло, и посты получаются
+ * гладкими и пустыми. Текст — это и есть продукт, а не побочный результат.
+ *
+ * Значение конечное, а не «сколько хочешь»: мысли считаются в тот же бюджет
+ * вывода, и без потолка модель способна израсходовать его до первого поста.
+ */
+const THINKING_BUDGET = 2048;
+
 function buildBody(model: string, request: AiRequest): string {
   const generationConfig: Record<string, unknown> = {
     temperature: request.temperature,
@@ -92,9 +103,9 @@ function buildBody(model: string, request: AiRequest): string {
     responseMimeType: "application/json",
     responseSchema: request.schema,
   };
-  // Размышления модели съедают бюджет вывода, а нам нужен объём ответа.
-  if (model.includes("2.5") || model.includes("2.0")) {
-    generationConfig.thinkingConfig = { thinkingBudget: 0 };
+  // Только у 2.5: у моделей 2.0 размышления нет вовсе, и настройка их ломает.
+  if (model.includes("2.5")) {
+    generationConfig.thinkingConfig = { thinkingBudget: THINKING_BUDGET };
   }
 
   return JSON.stringify({

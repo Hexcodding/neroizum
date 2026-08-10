@@ -6,7 +6,7 @@
  * Excel и раздать исполнителям. Всё остальное (PDF, интеграции) в MVP не нужно.
  */
 import { type GeneratedPost } from "@contracts";
-import { groupByDay, platformName } from "@/entities/post/view";
+import { groupByDay, platformName, separateCta } from "@/entities/post/view";
 
 export function toPlainText(title: string, posts: readonly GeneratedPost[]): string {
   const lines: string[] = [`КОНТЕНТ-ПЛАН: ${title}`, ""];
@@ -14,13 +14,16 @@ export function toPlainText(title: string, posts: readonly GeneratedPost[]): str
   for (const day of groupByDay(posts)) {
     lines.push(`${day.label.toUpperCase()}`, "");
     for (const post of day.posts) {
+      // Призыв печатается строкой только тогда, когда его нет в тексте поста:
+      // иначе читатель видит один и тот же вопрос дважды подряд.
+      const cta = separateCta(post);
       lines.push(
         `${post.time} · ${platformName(post.platform)} · ${post.type} · ${post.rubric}`,
         post.title,
         "",
         post.postContent,
         "",
-        `Призыв: ${post.cta}`,
+        cta.length > 0 ? `Призыв: ${cta}` : "",
         post.hashtags.length > 0 ? post.hashtags.join(" ") : "",
         `Картинка: ${post.visual}`,
         "",

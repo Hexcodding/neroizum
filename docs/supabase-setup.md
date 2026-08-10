@@ -59,15 +59,21 @@ Edge Functions → Secrets. Все значения обязательные —
 | `NEUROIZIUM_ADMIN_PASSWORD_HASH` | Хеш пароля админки, не сам пароль |
 | `NEUROIZIUM_ADMIN_TOKEN_SECRET` | Отдельная случайная строка для подписи входа в админку |
 | `GEMINI_API_KEY` | Ключ модели |
-| `NEUROIZIUM_ALLOWED_ORIGINS` | Адреса сайта через запятую, например `https://neuroizium.ru`. Звёздочка недопустима |
+| `NEUROIZIUM_ALLOWED_ORIGINS` | Адреса сайта через запятую. Звёздочка недопустима. Для разработки: `http://localhost:8080,http://127.0.0.1:8080,http://localhost:4173,http://127.0.0.1:4173` |
+
+Адреса `localhost` и `127.0.0.1` перечислены оба намеренно: сравнение идёт строками, и вход по одному адресу при разрешённом другом даёт отказ, который браузер показывает как «нет связи с сервером». Настоящую причину он скрипту не сообщает, и на её поиски уходит вечер.
 
 Значения с приставкой `SUPABASE_` руками не задаются — платформа подставляет их сама, и имена эти в панели заняты. Вписать вручную нужно шесть: `NEUROIZIUM_*` и `GEMINI_API_KEY`. Сервер берёт служебный ключ из `SUPABASE_SECRET_KEYS`, а если такой переменной нет — из `SUPABASE_SERVICE_ROLE_KEY`, так что подходят и новые проекты, и старые.
 
 Случайную строку удобно получить так (PowerShell):
 
 ```powershell
-[Convert]::ToBase64String((1..48 | ForEach-Object { Get-Random -Max 256 }))
+$b = New-Object byte[] 48
+(New-Object System.Security.Cryptography.RNGCryptoServiceProvider).GetBytes($b)
+[Convert]::ToBase64String($b)
 ```
+
+Именно этим генератором, а не `Get-Random`: тот выдаёт последовательность, предсказуемую по времени запуска, а от `NEUROIZIUM_PEPPER` зависит стойкость хешей всех лицензионных ключей сразу.
 
 Хеш пароля админки считается на вашей машине той же функцией, что и на сервере:
 
@@ -103,8 +109,14 @@ npx supabase functions deploy payment-webhook
 ### Проверить, что всё встало
 
 ```powershell
-curl.exe -i -X POST "https://<проект>.supabase.co/functions/v1/activate" -H "content-type: application/json" -d "{\"key\":\"NZM-AAAA-BBBB-CCCC\"}"
+$body = "$env:TEMP\nzm-probe.json"
+Set-Content -Path $body -Value '{"key":"NZM-AAAA-BBBB-CCCC"}' -Encoding UTF8 -NoNewline
+curl.exe -s -X POST "https://<проект>.supabase.co/functions/v1/activate" `
+  -H "content-type: application/json" --data-binary "@$body"
+Remove-Item $body
 ```
+
+Тело запроса передаётся файлом не из любви к сложности: PowerShell 5.1 вырезает двойные кавычки при передаче аргументов внешним программам, и `-d "{\"key\":...}"` доходит до сервера уже не как JSON. Ответ на это — `INVALID_REQUEST`, и полчаса уходит на поиски несуществующей поломки.
 
 Ожидаемый ответ — `401` с текстом «Ключ не подошёл»: значит, функция запустилась, прочитала секреты и дошла до базы. Ответ `500` со словами «Не заданы обязательные секреты» прямо называет, чего не хватает.
 

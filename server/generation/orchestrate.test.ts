@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { EMPTY_BRAND_PROFILE, type GenerationRequest, type PeriodDays } from "../../contracts/index.ts";
+import { PROMPT_VERSION } from "../prompt/version.ts";
 import { generatePlan, type QuotaGuard } from "./orchestrate.ts";
 import { GenerationError } from "./errors.ts";
 import { createFakeProvider, type FakeBehaviour } from "./__fixtures__/fake-provider.ts";
@@ -38,7 +39,9 @@ describe("генерация плана", () => {
 
     expect(result.posts).toHaveLength(3);
     expect(result.stopped).toBe(false);
-    expect(result.promptVersion).toBe("1.0.0");
+    // Сверяется с текущей версией, а не с числом: иначе правка промпта
+    // роняет тест, который проверяет совсем другое.
+    expect(result.promptVersion).toBe(PROMPT_VERSION);
   });
 
   it("даты и площадки берутся из расписания, а не из ответа модели", async () => {

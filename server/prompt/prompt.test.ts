@@ -12,6 +12,7 @@ import {
   type PreviousPostSummary,
 } from "../../contracts/index.ts";
 import { buildPrompt } from "./index.ts";
+import { CLICHE_RULES } from "./blocks/voice.ts";
 import { PROMPT_VERSION } from "./version.ts";
 
 function makeRequest(overrides: Partial<GenerationRequest> = {}): GenerationRequest {
@@ -64,9 +65,26 @@ describe("сборка промпта", () => {
     expect(text).toContain("КАТАЛОГ РУБРИК");
     expect(text).toContain("ПЛОЩАДКИ И ИХ РАЗЛИЧИЯ");
     expect(text).toContain("Zero Click Value");
+    expect(text).toContain("ГОЛОС И ЖИВОСТЬ ТЕКСТА");
     expect(text).toContain("ВИЗУАЛЬНАЯ МАТРИЦА");
     expect(text).toContain("РАСПИСАНИЕ");
     expect(text).toContain("ФОРМАТ ОТВЕТА");
+  });
+
+  it("эмодзи требуются, а не разрешаются с оговорками", () => {
+    const { text } = buildFor(makeRequest());
+
+    expect(text).toContain("ЭМОДЗИ: от одного до трёх на пост");
+    // Прежняя формулировка читалась моделью как «лучше никаких».
+    expect(text).not.toContain("только там, где они уместны");
+  });
+
+  it("список запрещённых оборотов попадает в промпт целиком", () => {
+    const { text } = buildFor(makeRequest());
+
+    for (const rule of CLICHE_RULES) {
+      expect(text, rule.label).toContain(rule.label);
+    }
   });
 
   it("возвращает версию промпта и ожидаемое количество постов", () => {

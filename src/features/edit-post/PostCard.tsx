@@ -10,7 +10,7 @@
  */
 import { useState } from "react";
 import type { GeneratedPost } from "@contracts";
-import { platformName, postToClipboard, typeTone } from "@/entities/post/view";
+import { platformName, postToClipboard, separateCta, typeTone } from "@/entities/post/view";
 import { copyText } from "@/shared/lib/download";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/Button";
@@ -22,6 +22,7 @@ export interface PostCardProps {
 
 export function PostCard({ post, onEdit }: PostCardProps) {
   const [copied, setCopied] = useState(false);
+  const cta = separateCta(post);
 
   const copy = async (): Promise<void> => {
     const done = await copyText(postToClipboard(post));
@@ -58,7 +59,7 @@ export function PostCard({ post, onEdit }: PostCardProps) {
         </div>
       )}
 
-      <p className="text-sm font-medium">{post.cta}</p>
+      {cta.length > 0 && <p className="text-sm font-medium">{cta}</p>}
 
       {post.hashtags.length > 0 && (
         <p className="text-xs text-muted">{post.hashtags.join(" ")}</p>

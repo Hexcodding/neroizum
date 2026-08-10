@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GeneratedPost } from "@contracts";
-import { groupByDay, platformName, postToClipboard } from "./view";
+import { groupByDay, platformName, postToClipboard, separateCta } from "./view";
 
 function makePost(number: number, date: string, time: string): GeneratedPost {
   return {
@@ -62,6 +62,39 @@ describe("копирование поста", () => {
     const post = { ...makePost(1, "2026-03-16", "10:00"), cta: "", hashtags: [] };
 
     expect(postToClipboard(post)).toBe("Текст.");
+  });
+
+  it("призыв не повторяется, если он уже есть в конце текста", () => {
+    const cta = "Как вы считаете, ваш бизнес готов к этому?";
+    const post = {
+      ...makePost(1, "2026-03-16", "10:00"),
+      postContent: `Первый абзац.\n\n${cta}`,
+      cta,
+      hashtags: [],
+    };
+
+    expect(separateCta(post)).toBe("");
+    expect(postToClipboard(post)).toBe(`Первый абзац.\n\n${cta}`);
+  });
+
+  it("разница в знаках и регистре не мешает узнать тот же призыв", () => {
+    const post = {
+      ...makePost(1, "2026-03-16", "10:00"),
+      postContent: "Первый абзац.\n\nА ваш бизнес — готов?",
+      cta: "А ваш бизнес готов?",
+    };
+
+    expect(separateCta(post)).toBe("");
+  });
+
+  it("настоящий отдельный призыв остаётся на месте", () => {
+    const post = {
+      ...makePost(1, "2026-03-16", "10:00"),
+      postContent: "Разбор ошибки хранения хлеба.",
+      cta: "Расскажите, как храните хлеб вы.",
+    };
+
+    expect(separateCta(post)).toBe("Расскажите, как храните хлеб вы.");
   });
 });
 

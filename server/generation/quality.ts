@@ -11,6 +11,7 @@
  */
 import { PLATFORMS, type ContentType, type GeneratedPost } from "../../contracts/index.ts";
 import { TEASER_PHRASES } from "../prompt/blocks/anti-teaser.ts";
+import { findCliche } from "../prompt/blocks/voice.ts";
 import { MAX_STYLE_REPEATS_IN_ROW } from "../prompt/blocks/visual.ts";
 import { INFO_PLAN_FORBIDDEN_WORDS } from "../prompt/blocks/compliance.ts";
 
@@ -52,6 +53,14 @@ function findTeaser(text: string): string | null {
   return TEASER_PHRASES.find((phrase) => lower.includes(phrase)) ?? null;
 }
 
+/**
+ * Штамп в тексте. Проверяются и заголовок с хуком: именно там чаще всего
+ * оказывается «Многие думают, что…» — то есть первое, что видит читатель.
+ */
+function findPostCliche(post: GeneratedPost): string | null {
+  return findCliche(`${post.title}\n${post.hook}\n${post.postContent}`);
+}
+
 /** Обещал в заголовке количество — обязан перечислить столько же пунктов. */
 function checkPromisedItems(post: GeneratedPost): string | null {
   const promised = PROMISED_COUNT.exec(post.title);
@@ -79,6 +88,13 @@ function checkPost(post: GeneratedPost, infoPlanMode: boolean): string[] {
   const teaser = findTeaser(post.postContent);
   if (teaser !== null) {
     reasons.push(`текст обещает продолжение вместо пользы: «${teaser}»`);
+  }
+
+  const cliche = findPostCliche(post);
+  if (cliche !== null) {
+    reasons.push(
+      `штамп «${cliche}»: начни с конкретного — сцены, цифры из данных о бизнесе или реплики клиента`,
+    );
   }
 
   const promised = checkPromisedItems(post);
