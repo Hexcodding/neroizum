@@ -45,20 +45,30 @@ describe("видимый номер клиента", () => {
   });
 
   /**
-   * Главная ошибка предыдущей версии: видимый префикс был началом самого
-   * ключа и раскрывал 7 из 12 секретных символов. Тест ловит возврат такой
-   * связи: у номера клиента не должно быть общих кусков с ключом.
+   * Главная ошибка предыдущей версии: видимый префикс был началом самого ключа
+   * и раскрывал 7 из 12 секретных символов.
+   *
+   * Проверяется не отсутствие совпадающих букв — случайные совпадения на
+   * алфавите из 32 символов неизбежны, и такой тест падал бы раз в сотню
+   * запусков без всякой причины. Проверяется независимость: номер не выводится
+   * из ключа ни при каком его значении.
    */
-  it("не содержит фрагментов ключа", () => {
-    for (let index = 0; index < 200; index += 1) {
-      const key = generateLicenseKey();
-      const clientId = generateClientId().slice(3);
-      const groups = key.slice(4).split("-");
+  it("не выводится из ключа", () => {
+    // Функция вообще не принимает ключ. Появится аргумент — тест упадёт, и это
+    // единственный способ вернуть старую связь незаметно.
+    expect(generateClientId).toHaveLength(0);
 
-      for (const group of groups) {
-        expect(clientId).not.toContain(group);
-        expect(clientId).not.toContain(group.slice(0, 3));
-      }
+    const ids = new Set(Array.from({ length: 200 }, generateClientId));
+    expect(ids.size).toBe(200);
+  });
+
+  it("целая группа ключа в номер не попадает", () => {
+    const key = generateLicenseKey();
+    const groups = key.slice(4).split("-");
+    const clientId = generateClientId().slice(3);
+
+    for (const group of groups) {
+      expect(clientId).not.toContain(group);
     }
   });
 

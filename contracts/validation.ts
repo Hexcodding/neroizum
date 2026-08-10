@@ -131,6 +131,74 @@ function checkChoices(request: Record<string, unknown>): FieldError[] {
   return errors;
 }
 
+/** Пределы для отредактированного человеком поста. Запас щедрый: правка руками
+ * может быть длиннее сгенерированного текста, но не безразмерной. */
+const EDITED_POST_LIMITS = { text: 8000, line: 500, hashtags: 30 } as const;
+
+/**
+ * Проверка поста после правки человеком. Сервер не доверяет присланному даже от
+ * своего клиента: иначе в базу попадёт что угодно, включая поля не того типа.
+ */
+function checkPostSlot(post: Record<string, unknown>): FieldError[] {
+  const errors: FieldError[] = [];
+
+  if (typeof post.number !== "number" || !Number.isInteger(post.number) || post.number < 1) {
+    errors.push({ field: "number", message: "Потерялся номер поста." });
+  }
+  if (typeof post.date !== "string" || parseIsoDate(post.date) === null) {
+    errors.push({ field: "date", message: "Проверьте дату публикации." });
+  }
+  if (typeof post.time !== "string" || !/^\d{2}:\d{2}$/.test(post.time)) {
+    errors.push({ field: "time", message: "Время указывается в виде ЧЧ:ММ." });
+  }
+  if (!isPlatformId(post.platform)) {
+    errors.push({ field: "platform", message: "Выберите площадку из списка." });
+  }
+  return errors;
+}
+
+function checkPostTexts(post: Record<string, unknown>): FieldError[] {
+  const errors: FieldError[] = [];
+  const content = post.postContent;
+
+  if (typeof content !== "string" || content.trim().length === 0) {
+    errors.push({ field: "postContent", message: "Текст поста не может быть пустым." });
+  } else if (content.length > EDITED_POST_LIMITS.text) {
+    errors.push({
+      field: "postContent",
+      message: `Слишком длинный текст: до ${String(EDITED_POST_LIMITS.text)} символов.`,
+    });
+  }
+
+  for (const field of ["title", "hook", "cta", "rubric", "visual"] as const) {
+    const value = post[field];
+    if (typeof value !== "string") {
+      errors.push({ field, message: "Поле повреждено." });
+    } else if (value.length > EDITED_POST_LIMITS.line) {
+      errors.push({
+        field,
+        message: `Слишком длинно: до ${String(EDITED_POST_LIMITS.line)} символов.`,
+      });
+    }
+  }
+
+  if (!Array.isArray(post.hashtags) || post.hashtags.length > EDITED_POST_LIMITS.hashtags) {
+    errors.push({ field: "hashtags", message: "Хештеги передаются списком, до 30 штук." });
+  }
+  return errors;
+}
+
+export function validateEditedPost(input: unknown): ValidationResult {
+  if (typeof input !== "object" || input === null) {
+    return { ok: false, errors: [{ field: "post", message: "Пост не передан." }] };
+  }
+
+  const post = input as Record<string, unknown>;
+  const errors = [...checkPostSlot(post), ...checkPostTexts(post)];
+
+  return errors.length === 0 ? { ok: true } : { ok: false, errors };
+}
+
 export function validateGenerationRequest(input: unknown): ValidationResult {
   if (typeof input !== "object" || input === null) {
     return { ok: false, errors: [{ field: "request", message: "Запрос пустой." }] };

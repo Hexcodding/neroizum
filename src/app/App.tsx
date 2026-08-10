@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/shared/theme/ThemeProvider";
+import { AccessProvider } from "@/features/access/AccessProvider";
 import { AppRoutes } from "./routes";
 
 function RouteFallback() {
@@ -14,11 +15,13 @@ function RouteFallback() {
 export function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Suspense fallback={<RouteFallback />}>
-          <AppRoutes />
-        </Suspense>
-      </BrowserRouter>
+      <AccessProvider>
+        <BrowserRouter>
+          <Suspense fallback={<RouteFallback />}>
+            <AppRoutes />
+          </Suspense>
+        </BrowserRouter>
+      </AccessProvider>
     </ThemeProvider>
   );
 }

@@ -24,7 +24,7 @@
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
 
-    "types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
