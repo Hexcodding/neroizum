@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>НЕЙРОИЗЮМ — контент-план для соцсетей за 10 минут</title>
+    <meta
+      name="description"
+      content="НЕЙРОИЗЮМ собирает контент-план на месяц с готовыми текстами постов для Telegram, VK, MAX, TikTok и Одноклассников."
+    />
+    <meta name="theme-color" content="#1a1418" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="НЕЙРОИЗЮМ — контент-план для соцсетей за 10 минут" />
+    <meta
+      property="og:description"
+      content="Готовые тексты постов на месяц вперёд для российских площадок, а не темы и наброски."
+    />
+    <meta property="og:image" content="/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      // Тема применяется до первой отрисовки, иначе при загрузке мелькает
+      // тёмный экран у тех, кто выбрал светлую тему.
+      (function () {
+        try {
+          var saved = localStorage.getItem("neuroizium-theme");
+          var theme = saved === "light" || saved === "dark" ? saved : "dark";
+          document.documentElement.classList.remove("light", "dark");
+          document.documentElement.classList.add(theme);
+        } catch (error) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

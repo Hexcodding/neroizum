@@ -1,0 +1,28 @@
+{
+  // Серверный слой проверяется БЕЗ библиотеки DOM. Это не косметика:
+  // без DOM обращение к window, document или React-типам не скомпилируется,
+  // то есть требование «server/ не знает про браузер» держится компилятором,
+  // а не силой воли разработчика.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "types": []
+  },
+  "include": ["server"]
+}

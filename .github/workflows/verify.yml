@@ -1,0 +1,38 @@
+name: Проверка
+
+# В стабильную ветку не попадает код, который не прошёл проверки.
+# Тот же набор, что и локальная команда npm run verify.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Типы
+        run: npm run typecheck
+
+      - name: Линтер
+        run: npm run lint
+
+      - name: Тесты
+        run: npm run test
+
+      - name: Сборка
+        run: npm run build
+
+      - name: Промпт не попал в бандл
+        run: npm run check:bundle

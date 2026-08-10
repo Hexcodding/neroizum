@@ -1,0 +1,24 @@
+# Зависимости и сборка
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Секреты: в репозиторий не попадают никогда
+.env
+.env.*
+!.env.example
+
+# Выгрузки базы данных — хранятся вне репозитория
+backups/
+
+# Служебное
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+coverage/
+.vite/
+.vscode/*
+!.vscode/extensions.json
+.idea/

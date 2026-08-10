@@ -1,0 +1,178 @@
+/**
+ * Дизайн-токены НЕЙРОИЗЮМ.
+ *
+ * Перенесены из предыдущей версии: фирменная сливово-виноградная гамма.
+ * Тёмная тема — значения по умолчанию в :root, светлая — переопределение
+ * в .light. На <html> всегда висит ровно один класс, light или dark:
+ * без класса dark не работали бы варианты Tailwind вида dark:text-...
+ *
+ * Ни один компонент не задаёт цвет напрямую — только через эти переменные.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 320 12% 9%;
+    --foreground: 320 8% 90%;
+
+    --card: 320 11% 12%;
+    --card-foreground: 320 8% 90%;
+
+    --popover: 320 11% 12%;
+    --popover-foreground: 320 8% 90%;
+
+    --surface: 320 10% 15%;
+
+    /* Изюм / cold grape — фирменный акцент */
+    --primary: 325 38% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 320 10% 16%;
+    --secondary-foreground: 320 8% 72%;
+
+    --muted: 320 10% 16%;
+    --muted-foreground: 320 6% 50%;
+
+    --accent: 325 38% 52%;
+    --accent-foreground: 0 0% 100%;
+
+    --info: 200 65% 52%;
+    --info-foreground: 0 0% 100%;
+    --success: 160 55% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 88% 52%;
+    --warning-foreground: 0 0% 0%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 320 10% 18%;
+    --input: 320 10% 18%;
+    --ring: 325 38% 52%;
+
+    --radius: 0.875rem;
+
+    /* Тени и подсветка зависят от темы: за счёт этих трёх переменных
+       светлая и тёмная выглядят одинаково аккуратно. */
+    --shadow: 0 0% 0%;
+    --shadow-strength: 0.5;
+    --inset-highlight: 0 0% 100% / 0.04;
+    --ambient-vignette: 0 0% 0% / 0.28;
+
+    --font-display: "Onest", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+  }
+
+  .light {
+    --background: 320 20% 98%;
+    --foreground: 320 18% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 320 18% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 320 18% 14%;
+
+    --surface: 320 14% 96%;
+
+    --primary: 325 42% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 320 12% 93%;
+    --secondary-foreground: 320 12% 32%;
+
+    --muted: 320 12% 93%;
+    --muted-foreground: 320 8% 42%;
+
+    --accent: 325 42% 42%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 160 55% 32%;
+    --warning: 38 88% 42%;
+    --info: 200 65% 40%;
+
+    --border: 320 10% 88%;
+    --input: 320 10% 88%;
+    --ring: 325 42% 42%;
+
+    --shadow-strength: 0.09;
+    --inset-highlight: 0 0% 100% / 0.8;
+    --ambient-vignette: 320 18% 14% / 0.04;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.35);
+    color: hsl(var(--foreground));
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+}
+
+@layer components {
+  .ambient-bg {
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -15%, hsl(var(--primary) / 0.11), transparent 55%),
+      radial-gradient(ellipse 50% 45% at 100% 20%, hsl(var(--primary) / 0.05), transparent 50%),
+      radial-gradient(ellipse 130% 70% at 50% 125%, hsl(var(--ambient-vignette)), transparent 60%);
+  }
+
+  .premium-card {
+    @apply rounded-2xl border border-border/70 bg-card/90 backdrop-blur-md;
+    box-shadow: 0 8px 32px -12px hsl(var(--shadow) / var(--shadow-strength));
+  }
+
+  .page-title {
+    @apply font-display text-2xl font-semibold tracking-tight sm:text-3xl;
+  }
+
+  .section-hint {
+    @apply text-sm leading-relaxed text-muted-foreground;
+  }
+}
