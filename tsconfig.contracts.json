@@ -1,33 +1,25 @@
 {
+  // Общий словарь проверяется отдельно и тоже без библиотеки DOM: он обязан
+  // оставаться пригодным и для браузера, и для серверного окружения Deno.
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "useDefineForClassFields": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
 
     "strict": true,
-    "noImplicitAny": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
 
-    "types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@contracts": ["./contracts/index.ts"],
-      "@contracts/*": ["./contracts/*"]
-    }
+    "types": []
   },
-  "include": ["src"]
+  "include": ["contracts"]
 }

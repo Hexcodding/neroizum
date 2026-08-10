@@ -1,0 +1,97 @@
+/**
+ * Визуальная матрица из десяти стилей. Возвращена из прототипа `jj`: в третьей
+ * версии от неё осталась одна строчка «Human Touch», и все картинки к постам
+ * стали похожи друг на друга.
+ *
+ * Стили заданы данными, а не текстом внутри промпта, по одной причине:
+ * модель обязана вернуть идентификатор выбранного стиля в поле visualStyle,
+ * и тогда правило «не повторять стиль более двух раз подряд» проверяется
+ * программой, а не на глаз.
+ */
+
+export interface VisualStyle {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+}
+
+export const VISUAL_STYLES: readonly VisualStyle[] = [
+  {
+    id: "surreal-absurdity",
+    name: "Surreal Absurdity",
+    description: "предмет или услуга в неожиданном, абсурдном контексте; расчёт на удивление",
+  },
+  {
+    id: "flash-candid",
+    name: "Flash-Candid",
+    description:
+      "сырое фото на смартфон с прямой вспышкой, неидеальная композиция; максимальное доверие",
+  },
+  {
+    id: "craft-design",
+    name: "Craft Design",
+    description: "рваная бумага, тактильные текстуры, рукописные пометки, следы ручной работы",
+  },
+  {
+    id: "creative-maximalism",
+    name: "Creative Maximalism",
+    description: "многослойность, коллаж, графика видеоигр, управляемый визуальный хаос",
+  },
+  {
+    id: "radical-experimental",
+    name: "Radical Experimental",
+    description: "резкая типографика, намеренное нарушение гармонии, провокация",
+  },
+  {
+    id: "glassmorphism",
+    name: "Glassmorphism",
+    description: "жидкое стекло, мягкое преломление света, полупрозрачные слои",
+  },
+  {
+    id: "loud-minimalism",
+    name: "Loud Minimalism",
+    description: "крупная кричащая типографика и ультраяркий цвет вместо пустого пространства",
+  },
+  {
+    id: "infographic-master",
+    name: "Infographic Master",
+    description: "геометрическое деление кадра по диагонали или вертикали, яркие акценты, цифры",
+  },
+  {
+    id: "slow-life",
+    name: "Slow-life / Cozy",
+    description: "романтизация быта, мягкий свет, уют, отказ от культа продуктивности",
+  },
+  {
+    id: "analog-nostalgia",
+    name: "Analog Nostalgia",
+    description: "плёночное зерно, шум VHS, эстетика девяностых и нулевых",
+  },
+];
+
+export const VISUAL_STYLE_IDS: readonly string[] = VISUAL_STYLES.map((style) => style.id);
+
+/** Сколько раз подряд допустим один и тот же стиль. */
+export const MAX_STYLE_REPEATS_IN_ROW = 2;
+
+function styleLines(): string {
+  return VISUAL_STYLES.map(
+    (style, index) => `${index + 1}. ${style.id} (${style.name}) — ${style.description}`,
+  ).join("\n");
+}
+
+export function buildVisualBlock(): string {
+  return `ВИЗУАЛЬНАЯ МАТРИЦА. Для каждого поста выбери ОДИН стиль из десяти и верни его идентификатор в поле visualStyle:
+${styleLines()}
+
+Правила выбора стиля:
+- один и тот же стиль не может стоять более ${MAX_STYLE_REPEATS_IN_ROW} раз подряд;
+- за план должно быть использовано не менее пяти разных стилей;
+- стиль подбирается под смысл поста, а не случайно: разбор ошибки просит инфографику, личная история — плёночную неидеальность.
+
+Поле imagePrompt пиши на английском, от 40 слов, и обязательно описывай свет, метафору и текстуру, а не только предмет. В конце добавляй пропорции кадра для площадки в виде --ar 16:9.
+Human Touch: добавляй маркеры реальности — неидеальный свет, живые текстуры, следы использования. Избегай «ИИ-глянца»: стеклянных градиентов, симметричных лиц, вылизанных отражений.
+Если на картинке предполагается текст, обязательно указывай 'with Russian text in Cyrillic'.
+
+Поле visual заполняй по-русски: что в кадре, какой свет, какая эмоция. Это описание читает человек, а не генератор картинок.`;
+}

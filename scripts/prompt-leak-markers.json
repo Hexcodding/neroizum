@@ -1,0 +1,16 @@
+{
+  "comment": "Фразы из промпта, по которым проверяется, что он не попал в браузерный бандл. Один источник для скрипта scripts/bundle-guard.mjs и для теста server/prompt/leak-markers.test.ts: тест падает, если маркера больше нет в промпте, поэтому список не может устареть незаметно.",
+  "markers": [
+    "Zero Click Value",
+    "Human Touch",
+    "Surreal Absurdity",
+    "Analog Nostalgia",
+    "Flash-Candid",
+    "with Russian text in Cyrillic",
+    "ПРИОРИТЕТ ИНСТРУКЦИЙ",
+    "ПРАВИЛО N ПУНКТОВ",
+    "КАТАЛОГ РУБРИК",
+    "ТОЧНЫЕ ПРОПОРЦИИ ТИПОВ",
+    "РЕЖИМ ИНФО-ПЛАНА"
+  ]
+}

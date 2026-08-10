@@ -13,6 +13,8 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
+    // Нужно тесту, который сверяет список фраз защиты бандла с промптом.
+    "resolveJsonModule": true,
 
     "strict": true,
     "noImplicitAny": true,
@@ -22,7 +24,12 @@
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
 
-    "types": []
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@contracts": ["./contracts/index.ts"],
+      "@contracts/*": ["./contracts/*"]
+    }
   },
   "include": ["server"]
 }

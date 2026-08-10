@@ -94,4 +94,31 @@ const serverConfig = {
   },
 };
 
-export const layerBoundaries = [...LAYERS.map(clientLayerConfig), serverConfig];
+/**
+ * Общий словарь: его импортируют обе стороны, поэтому сам он не должен знать
+ * ни про интерфейс, ни про сервер. Иначе через него протечёт любая зависимость.
+ */
+const contractsConfig = {
+  files: ["contracts/**/*.ts"],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: FRAMEWORK_PATHS,
+        patterns: [
+          {
+            group: ["@/**", "**/src/**", "**/server/**"],
+            message:
+              "contracts/ импортируют обе стороны, поэтому он не зависит ни от интерфейса, ни от сервера. Иначе зависимость протечёт через него.",
+          },
+        ],
+      },
+    ],
+  },
+};
+
+export const layerBoundaries = [
+  ...LAYERS.map(clientLayerConfig),
+  serverConfig,
+  contractsConfig,
+];

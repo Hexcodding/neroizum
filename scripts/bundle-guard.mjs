@@ -10,20 +10,21 @@
  * Запуск: node scripts/bundle-guard.mjs
  */
 import { readdir, readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
 /**
- * Фразы-маркеры. Пополняется на этапе 1 вместе с блоками промпта.
- * Маркер должен быть достаточно характерным, чтобы не совпасть случайно.
+ * Фразы-маркеры лежат в отдельном файле, потому что их читают двое: этот
+ * скрипт и тест, проверяющий, что каждая фраза действительно есть в промпте.
+ * Без такого теста список тихо устареет после первой правки формулировок,
+ * и проверка станет декорацией.
  */
-export const PROMPT_MARKERS = [
-  "Senior Content Architect",
-  "Zero Click Value",
-  "Surreal Absurdity",
-  "Analog Nostalgia",
-  "NEUROIZIUM_PROMPT_MARKER",
-];
+// Путь считается от корня проекта, а не от адреса этого модуля: под тестовым
+// запуском адрес модуля не является файловым, и чтение по нему падает.
+const markersPath = path.resolve(process.cwd(), "scripts/prompt-leak-markers.json");
+
+export const PROMPT_MARKERS = JSON.parse(readFileSync(markersPath, "utf8")).markers;
 
 const SCANNED_EXTENSIONS = new Set([".js", ".mjs", ".css", ".map", ".html"]);
 
