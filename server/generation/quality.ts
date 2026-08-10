@@ -9,10 +9,10 @@
  * Формулировки причин написаны так, чтобы их можно было отдать модели при
  * перезапросе: они объясняют, что именно не так.
  */
-import { PLATFORMS, type ContentType, type GeneratedPost } from "@contracts";
-import { TEASER_PHRASES } from "../prompt/blocks/anti-teaser";
-import { MAX_STYLE_REPEATS_IN_ROW } from "../prompt/blocks/visual";
-import { INFO_PLAN_FORBIDDEN_WORDS } from "../prompt/blocks/compliance";
+import { PLATFORMS, type ContentType, type GeneratedPost } from "../../contracts/index.ts";
+import { TEASER_PHRASES } from "../prompt/blocks/anti-teaser.ts";
+import { MAX_STYLE_REPEATS_IN_ROW } from "../prompt/blocks/visual.ts";
+import { INFO_PLAN_FORBIDDEN_WORDS } from "../prompt/blocks/compliance.ts";
 
 export interface PostDefect {
   readonly number: number;

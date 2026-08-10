@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { PLAN_RESPONSE_SCHEMA } from "../prompt/core/output-contract";
-import { GenerationError } from "./errors";
-import { callWithCascade } from "./provider/cascade";
-import { createFakeProvider, type FakeBehaviour } from "./__fixtures__/fake-provider";
-import type { AiRequest } from "./provider/types";
+import { PLAN_RESPONSE_SCHEMA } from "../prompt/core/output-contract.ts";
+import { GenerationError } from "./errors.ts";
+import { callWithCascade } from "./provider/cascade.ts";
+import { createFakeProvider, type FakeBehaviour } from "./__fixtures__/fake-provider.ts";
+import type { AiRequest } from "./provider/types.ts";
 
 function makeRequest(signal?: AbortSignal): AiRequest {
   return {

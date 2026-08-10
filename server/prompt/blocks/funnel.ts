@@ -10,7 +10,7 @@
  * вносилась в одном месте и сразу попадала и в промпт, и в проверку качества.
  * Проверять их предстоит на живых генерациях: это гипотеза, а не истина.
  */
-import { CONTENT_TYPES, type ChannelStageId, type ContentType, type GoalId } from "@contracts";
+import { CONTENT_TYPES, type ChannelStageId, type ContentType, type GoalId } from "../../../contracts/index.ts";
 
 export type ContentMix = Readonly<Record<ContentType, number>>;
 

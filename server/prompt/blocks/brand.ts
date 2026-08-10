@@ -10,8 +10,8 @@
  * формы не переносила tone, products, proof, stopWords и styleSamples.
  * Здесь путь генерации один, и терять данные негде.
  */
-import { INPUT_LIMITS, type AuthorRoleId, type BrandProfile } from "@contracts";
-import { clampBlock, clampLine, clampList, userData } from "../core/sanitize";
+import { INPUT_LIMITS, type AuthorRoleId, type BrandProfile } from "../../../contracts/index.ts";
+import { clampBlock, clampLine, clampList, userData } from "../core/sanitize.ts";
 
 /** Тональность по роли автора. Применяется, если голос бренда не задан явно. */
 const TONE_BY_ROLE: Readonly<Record<AuthorRoleId, string>> = {

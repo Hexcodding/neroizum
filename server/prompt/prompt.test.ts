@@ -10,9 +10,9 @@ import {
   type GenerationRequest,
   type PlatformId,
   type PreviousPostSummary,
-} from "@contracts";
-import { buildPrompt } from "./index";
-import { PROMPT_VERSION } from "./version";
+} from "../../contracts/index.ts";
+import { buildPrompt } from "./index.ts";
+import { PROMPT_VERSION } from "./version.ts";
 
 function makeRequest(overrides: Partial<GenerationRequest> = {}): GenerationRequest {
   return {

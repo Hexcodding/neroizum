@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, formatHumanDate, parseIsoDate, weekdayName } from "./dates";
+import { addDays, formatHumanDate, parseIsoDate, weekdayName } from "./dates.ts";
 
 describe("даты", () => {
   it("разбирает корректную дату", () => {

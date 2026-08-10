@@ -6,8 +6,8 @@
  * запросов» продукт сразу шёл к следующей модели, а когда заняты оказывались
  * все — сдавался. Пауза в секунду решает большинство таких случаев.
  */
-import { GenerationError, toGenerationError } from "../errors";
-import type { AiProvider, AiRequest, AiResponse } from "./types";
+import { GenerationError, toGenerationError } from "../errors.ts";
+import type { AiProvider, AiRequest, AiResponse } from "./types.ts";
 
 export interface CascadeOptions {
   readonly provider: AiProvider;

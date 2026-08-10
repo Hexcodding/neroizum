@@ -17,6 +17,10 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
+    // Импорты пишутся с расширением .ts, потому что этот код выполняет Deno, а
+    // он не угадывает расширения. Заодно исчезает необходимость в псевдонимах:
+    // путь в исходнике и путь на диске совпадают.
+    "allowImportingTsExtensions": true,
     // Нужно тесту, который сверяет список фраз защиты бандла с промптом.
     "resolveJsonModule": true,
 
@@ -28,12 +32,12 @@
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
 
-    "types": [],
-    "baseUrl": ".",
-    "paths": {
-      "@contracts": ["./contracts/index.ts"],
-      "@contracts/*": ["./contracts/*"]
-    }
+    // Псевдонима @contracts здесь намеренно нет: Deno о нём не знает, а
+    // отсутствие записи означает, что случайное использование сразу упадёт
+    // при проверке типов, а не при развёртывании.
+    "types": []
   },
-  "include": ["server"]
+  // Точки входа Supabase проверяются вместе с сервером: иначе ошибка в них
+  // обнаружится только при развёртывании.
+  "include": ["server", "supabase/functions"]
 }

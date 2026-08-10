@@ -9,16 +9,16 @@
  * Сообщения написаны для человека без маркетолога: что именно поправить, а не
  * «поле niche не прошло валидацию».
  */
-import { isPlatformId, PLATFORM_IDS } from "./platforms";
+import { isPlatformId, PLATFORM_IDS } from "./platforms.ts";
 import {
   AUTHOR_ROLE_IDS,
   CHANNEL_STAGE_IDS,
   GOAL_IDS,
   PERIOD_DAYS_OPTIONS,
   POSTS_PER_WEEK_OPTIONS,
-} from "./content";
-import { INPUT_LIMITS } from "./request";
-import { parseIsoDate } from "./dates";
+} from "./content.ts";
+import { INPUT_LIMITS } from "./request.ts";
+import { parseIsoDate } from "./dates.ts";
 
 export interface FieldError {
   /** Имя поля, чтобы интерфейс подсветил нужное место формы. */

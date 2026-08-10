@@ -8,9 +8,9 @@
  * Telegram. Здесь дата и площадка каждого поста определены заранее, а модели
  * остаётся то, что она умеет — содержание.
  */
-import type { PlatformId } from "./platforms";
-import type { PeriodDays, PostsPerWeek } from "./content";
-import { addDays, weekdayName } from "./dates";
+import type { PlatformId } from "./platforms.ts";
+import type { PeriodDays, PostsPerWeek } from "./content.ts";
+import { addDays, weekdayName } from "./dates.ts";
 
 export interface ScheduleSlot {
   readonly number: number;

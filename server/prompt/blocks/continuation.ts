@@ -8,8 +8,8 @@
  * другими словами. Здесь передаётся всё, что определяет содержание поста,
  * и повтор запрещён явно по каждому признаку.
  */
-import { INPUT_LIMITS, PLATFORMS, type PreviousPostSummary } from "@contracts";
-import { clampLine } from "../core/sanitize";
+import { INPUT_LIMITS, PLATFORMS, type PreviousPostSummary } from "../../../contracts/index.ts";
+import { clampLine } from "../core/sanitize.ts";
 
 const TITLE_LIMIT = 120;
 const HOOK_LIMIT = 160;

@@ -11,6 +11,9 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
+    // Интерфейс импортирует общий словарь, а внутри него пути записаны с
+    // расширением .ts ради Deno. Сборщик такие пути понимает.
+    "allowImportingTsExtensions": true,
 
     "strict": true,
     "noImplicitAny": true,

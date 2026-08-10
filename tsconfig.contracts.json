@@ -11,6 +11,8 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
+    // Расширение .ts в импортах: этот код читает и Deno на сервере.
+    "allowImportingTsExtensions": true,
 
     "strict": true,
     "noUnusedLocals": true,

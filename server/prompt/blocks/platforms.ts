@@ -9,7 +9,7 @@
  * Теперь площадка каждого поста задана расписанием, а здесь описано, чем
  * посты для разных площадок обязаны отличаться.
  */
-import { PLATFORMS, type PlatformId } from "@contracts";
+import { PLATFORMS, type PlatformId } from "../../../contracts/index.ts";
 
 const PLATFORM_RULES: Readonly<Record<PlatformId, string>> = {
   telegram:

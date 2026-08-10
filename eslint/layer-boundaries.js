@@ -92,9 +92,12 @@ const BROWSER_GLOBALS = [
   "history",
 ];
 
-/** Серверный слой: без фреймворка, без клиента и без браузера. */
+/**
+ * Серверный слой: без фреймворка, без клиента и без браузера. Точки входа
+ * Supabase живут в другой папке, но это тот же слой и те же запреты.
+ */
 const serverConfig = {
-  files: ["server/**/*.ts"],
+  files: ["server/**/*.ts", "supabase/functions/**/*.ts"],
   rules: {
     "no-restricted-imports": [
       "error",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePlanResponse } from "./parse";
+import { parsePlanResponse } from "./parse.ts";
 
 describe("разбор ответа", () => {
   it("читает обычный массив", () => {

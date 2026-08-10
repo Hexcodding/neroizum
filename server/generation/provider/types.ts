@@ -5,7 +5,7 @@
  * Так каскад «не ответила основная модель, идём к запасной» пишется один раз,
  * а тесты обходятся поддельным провайдером без единого сетевого запроса.
  */
-import type { SchemaNode } from "../../prompt/core/output-contract";
+import type { SchemaNode } from "../../prompt/core/output-contract.ts";
 
 export interface AiRequest {
   readonly prompt: string;

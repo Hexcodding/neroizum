@@ -7,7 +7,7 @@
  * день, то все посты на одной площадке. Теперь номер, дата и площадка каждого
  * поста посчитаны кодом, а от модели требуется только содержание.
  */
-import { PLATFORMS, countByPlatform, type ScheduleSlot } from "@contracts";
+import { PLATFORMS, countByPlatform, type ScheduleSlot } from "../../../contracts/index.ts";
 
 function slotLine(slot: ScheduleSlot): string {
   return `${slot.number} | ${slot.date} (${slot.weekday.toLowerCase()}) | ${slot.platform}`;

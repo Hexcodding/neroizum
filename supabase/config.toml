@@ -1,0 +1,18 @@
+project_id = "neuroizium-v2"
+
+# verify_jwt = false у всех четырёх точек входа не означает «без проверки».
+# Проверка своя: у клиента это токен сессии из лицензионного ключа, у админки —
+# подписанный токен, у вебхука — подпись платёжной системы. Встроенная проверка
+# JWT здесь не подходит, потому что регистрации в продукте нет вовсе.
+
+[functions.activate]
+verify_jwt = false
+
+[functions.generate-plan]
+verify_jwt = false
+
+[functions.admin]
+verify_jwt = false
+
+[functions.payment-webhook]
+verify_jwt = false

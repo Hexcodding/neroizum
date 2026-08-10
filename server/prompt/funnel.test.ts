@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CONTENT_TYPES, GOAL_IDS } from "@contracts";
-import { CONTENT_MIX_BY_GOAL, expectedTypeCounts } from "./blocks/funnel";
+import { CONTENT_TYPES, GOAL_IDS } from "../../contracts/index.ts";
+import { CONTENT_MIX_BY_GOAL, expectedTypeCounts } from "./blocks/funnel.ts";
 
 describe("стратегия под цель", () => {
   it("каждая цель даёт свои пропорции", () => {

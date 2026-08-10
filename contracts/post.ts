@@ -10,8 +10,8 @@
  * — добавлено поле visualStyle: без него правило «не повторять стиль более
  *   двух раз подряд» невозможно проверить программой, только на глаз.
  */
-import type { PlatformId } from "./platforms";
-import type { ContentType, PostFormat } from "./content";
+import type { PlatformId } from "./platforms.ts";
+import type { ContentType, PostFormat } from "./content.ts";
 
 export interface GeneratedPost {
   /** Порядковый номер в плане, начиная с 1. */

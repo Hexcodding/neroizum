@@ -7,21 +7,21 @@
  * правила качества, и лишь в конце формат ответа — требования к формату
  * лучше держатся, когда стоят последними.
  */
-import type { GenerationRequest, ScheduleSlot } from "@contracts";
-import { ROLE_BLOCK } from "./core/role";
-import { OUTPUT_CONTRACT_BLOCK } from "./core/output-contract";
-import { buildBusinessBlock } from "./blocks/business";
-import { buildBrandBlock } from "./blocks/brand";
-import { buildFunnelBlock } from "./blocks/funnel";
-import { buildRubricsBlock } from "./blocks/rubrics";
-import { buildPlatformsBlock } from "./blocks/platforms";
-import { ANTI_TEASER_BLOCK } from "./blocks/anti-teaser";
-import { buildVisualBlock } from "./blocks/visual";
-import { buildComplianceBlock } from "./blocks/compliance";
-import { buildScheduleBlock } from "./blocks/schedule";
-import { buildContinuationBlock } from "./blocks/continuation";
-import { buildRepairBlock } from "./blocks/repair";
-import { PROMPT_VERSION } from "./version";
+import type { GenerationRequest, ScheduleSlot } from "../../contracts/index.ts";
+import { ROLE_BLOCK } from "./core/role.ts";
+import { OUTPUT_CONTRACT_BLOCK } from "./core/output-contract.ts";
+import { buildBusinessBlock } from "./blocks/business.ts";
+import { buildBrandBlock } from "./blocks/brand.ts";
+import { buildFunnelBlock } from "./blocks/funnel.ts";
+import { buildRubricsBlock } from "./blocks/rubrics.ts";
+import { buildPlatformsBlock } from "./blocks/platforms.ts";
+import { ANTI_TEASER_BLOCK } from "./blocks/anti-teaser.ts";
+import { buildVisualBlock } from "./blocks/visual.ts";
+import { buildComplianceBlock } from "./blocks/compliance.ts";
+import { buildScheduleBlock } from "./blocks/schedule.ts";
+import { buildContinuationBlock } from "./blocks/continuation.ts";
+import { buildRepairBlock } from "./blocks/repair.ts";
+import { PROMPT_VERSION } from "./version.ts";
 
 export interface BuiltPrompt {
   readonly text: string;
@@ -71,9 +71,9 @@ export function buildPrompt(
   };
 }
 
-export { PROMPT_VERSION } from "./version";
-export { PLAN_RESPONSE_SCHEMA } from "./core/output-contract";
-export { CONTENT_MIX_BY_GOAL, expectedTypeCounts } from "./blocks/funnel";
-export { VISUAL_STYLES, VISUAL_STYLE_IDS, MAX_STYLE_REPEATS_IN_ROW } from "./blocks/visual";
-export { RUBRICS, MAX_RUBRIC_REPEATS_IN_ROW } from "./blocks/rubrics";
-export { INFO_PLAN_FORBIDDEN_WORDS } from "./blocks/compliance";
+export { PROMPT_VERSION } from "./version.ts";
+export { PLAN_RESPONSE_SCHEMA } from "./core/output-contract.ts";
+export { CONTENT_MIX_BY_GOAL, expectedTypeCounts } from "./blocks/funnel.ts";
+export { VISUAL_STYLES, VISUAL_STYLE_IDS, MAX_STYLE_REPEATS_IN_ROW } from "./blocks/visual.ts";
+export { RUBRICS, MAX_RUBRIC_REPEATS_IN_ROW } from "./blocks/rubrics.ts";
+export { INFO_PLAN_FORBIDDEN_WORDS } from "./blocks/compliance.ts";

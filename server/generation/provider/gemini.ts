@@ -9,8 +9,8 @@
  * — таймаут: запрос не может висеть бесконечно;
  * — остановка пользователем доводится до самого сетевого запроса.
  */
-import { GenerationError } from "../errors";
-import type { AiProvider, AiRequest, AiResponse } from "./types";
+import { GenerationError } from "../errors.ts";
+import type { AiProvider, AiRequest, AiResponse } from "./types.ts";
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 

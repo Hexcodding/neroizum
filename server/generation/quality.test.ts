@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ContentType, GeneratedPost } from "@contracts";
-import { checkPlanQuality } from "./quality";
+import type { ContentType, GeneratedPost } from "../../contracts/index.ts";
+import { checkPlanQuality } from "./quality.ts";
 
 const LONG_TEXT =
   "Хлеб черствеет из-за тёплого пакета. Дайте буханке остыть на решётке два часа, " +

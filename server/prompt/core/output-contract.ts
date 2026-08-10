@@ -8,8 +8,8 @@
  * и путала регистр значений. Схема превращает договорённость в требование
  * на стороне провайдера.
  */
-import { CONTENT_TYPES, PLATFORM_IDS, POST_FORMATS } from "@contracts";
-import { VISUAL_STYLE_IDS } from "../blocks/visual";
+import { CONTENT_TYPES, PLATFORM_IDS, POST_FORMATS } from "../../../contracts/index.ts";
+import { VISUAL_STYLE_IDS } from "../blocks/visual.ts";
 
 type SchemaType = "STRING" | "INTEGER" | "ARRAY" | "OBJECT";
 

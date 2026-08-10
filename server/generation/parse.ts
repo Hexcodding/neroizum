@@ -6,7 +6,7 @@
  * в этом случае `JSON.parse` бросал исключение, и вся часть плана терялась,
  * хотя восемь постов были целыми. Теперь целые объекты достаются по одному.
  */
-import { GenerationError } from "./errors";
+import { GenerationError } from "./errors.ts";
 
 export interface ParseResult {
   readonly items: readonly Record<string, unknown>[];

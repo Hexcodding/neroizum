@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildSchedule, countByPlatform, postCount } from "./schedule";
-import type { PlatformId } from "./platforms";
+import { buildSchedule, countByPlatform, postCount } from "./schedule.ts";
+import type { PlatformId } from "./platforms.ts";
 
 describe("количество постов", () => {
   it("считается из частоты и длины периода", () => {

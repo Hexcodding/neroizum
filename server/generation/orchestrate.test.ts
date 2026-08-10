@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { EMPTY_BRAND_PROFILE, type GenerationRequest, type PeriodDays } from "@contracts";
-import { generatePlan, type QuotaGuard } from "./orchestrate";
-import { GenerationError } from "./errors";
-import { createFakeProvider, type FakeBehaviour } from "./__fixtures__/fake-provider";
+import { EMPTY_BRAND_PROFILE, type GenerationRequest, type PeriodDays } from "../../contracts/index.ts";
+import { generatePlan, type QuotaGuard } from "./orchestrate.ts";
+import { GenerationError } from "./errors.ts";
+import { createFakeProvider, type FakeBehaviour } from "./__fixtures__/fake-provider.ts";
 
 function makeRequest(overrides: Partial<GenerationRequest> = {}): GenerationRequest {
   return {

@@ -2,15 +2,15 @@
  * Что пользователь просит сгенерировать. Единая форма запроса для интерфейса,
  * проверки на границе сервера и сборки промпта.
  */
-import type { PlatformId } from "./platforms";
+import type { PlatformId } from "./platforms.ts";
 import type {
   AuthorRoleId,
   ChannelStageId,
   GoalId,
   PeriodDays,
   PostsPerWeek,
-} from "./content";
-import type { PreviousPostSummary } from "./post";
+} from "./content.ts";
+import type { PreviousPostSummary } from "./post.ts";
 
 /**
  * Профиль бренда. Собирается один раз в мастере первого запуска из свободного

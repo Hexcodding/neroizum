@@ -7,9 +7,9 @@
  * поэтому тест сверяет каждый маркер с собранным промптом.
  */
 import { describe, expect, it } from "vitest";
-import { buildSchedule, EMPTY_BRAND_PROFILE, type GenerationRequest } from "@contracts";
+import { buildSchedule, EMPTY_BRAND_PROFILE, type GenerationRequest } from "../../contracts/index.ts";
 import markers from "../../scripts/prompt-leak-markers.json";
-import { buildPrompt } from "./index";
+import { buildPrompt } from "./index.ts";
 
 function buildSample(infoPlanMode: boolean): string {
   const request: GenerationRequest = {

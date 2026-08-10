@@ -9,7 +9,7 @@
  *
  * Список предложен разработчиком и подтверждён заказчиком на этапе 1.
  */
-import { type ContentType } from "@contracts";
+import { type ContentType } from "../../../contracts/index.ts";
 
 export interface Rubric {
   readonly id: string;

@@ -13,8 +13,8 @@ import {
   type GeneratedPost,
   type PostFormat,
   type ScheduleSlot,
-} from "@contracts";
-import { VISUAL_STYLE_IDS } from "../prompt/blocks/visual";
+} from "../../contracts/index.ts";
+import { VISUAL_STYLE_IDS } from "../prompt/blocks/visual.ts";
 
 const DEFAULT_TYPE: ContentType = "Обучающий";
 const DEFAULT_FORMAT: PostFormat = "Текстовый пост";

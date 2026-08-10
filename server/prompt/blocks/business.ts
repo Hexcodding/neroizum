@@ -5,8 +5,8 @@
  * Оба поля пользователь пишет свободным текстом, поэтому оба проходят через
  * очистку и попадают в промпт в тегах: внутри тегов — данные, не инструкции.
  */
-import { GOAL_LABELS, INPUT_LIMITS, type GenerationRequest } from "@contracts";
-import { clampLine, userData } from "../core/sanitize";
+import { GOAL_LABELS, INPUT_LIMITS, type GenerationRequest } from "../../../contracts/index.ts";
+import { clampLine, userData } from "../core/sanitize.ts";
 
 export function buildBusinessBlock(request: GenerationRequest): string {
   const niche = clampLine(request.niche, INPUT_LIMITS.niche);

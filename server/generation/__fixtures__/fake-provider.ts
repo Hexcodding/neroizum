@@ -5,8 +5,8 @@
  * которые в нём перечислены. Так тесты проверяют настоящую сборку промпта и
  * настоящую раскладку ответа по слотам, а не заранее заготовленный ответ.
  */
-import type { GenerationError } from "../errors";
-import type { AiProvider, AiRequest, AiResponse } from "../provider/types";
+import type { GenerationError } from "../errors.ts";
+import type { AiProvider, AiRequest, AiResponse } from "../provider/types.ts";
 
 export interface PromptSlot {
   readonly number: number;

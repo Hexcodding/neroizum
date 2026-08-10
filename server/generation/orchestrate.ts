@@ -19,15 +19,15 @@ import {
   type GenerationRequest,
   type PreviousPostSummary,
   type ScheduleSlot,
-} from "@contracts";
-import { buildPrompt, PROMPT_VERSION } from "../prompt/index";
-import { PLAN_RESPONSE_SCHEMA } from "../prompt/core/output-contract";
-import { CONTENT_MIX_BY_GOAL, expectedTypeCounts } from "../prompt/blocks/funnel";
-import { GenerationError, toGenerationError } from "./errors";
-import { callWithCascade, type CascadeOptions } from "./provider/cascade";
-import { parsePlanResponse } from "./parse";
-import { normalizePosts } from "./normalize";
-import { checkPlanQuality, type QualityReport } from "./quality";
+} from "../../contracts/index.ts";
+import { buildPrompt, PROMPT_VERSION } from "../prompt/index.ts";
+import { PLAN_RESPONSE_SCHEMA } from "../prompt/core/output-contract.ts";
+import { CONTENT_MIX_BY_GOAL, expectedTypeCounts } from "../prompt/blocks/funnel.ts";
+import { GenerationError, toGenerationError } from "./errors.ts";
+import { callWithCascade, type CascadeOptions } from "./provider/cascade.ts";
+import { parsePlanResponse } from "./parse.ts";
+import { normalizePosts } from "./normalize.ts";
+import { checkPlanQuality, type QualityReport } from "./quality.ts";
 
 /** Постов в одном запросе к модели. */
 const BATCH_SIZE = 8;
