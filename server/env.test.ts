@@ -46,3 +46,59 @@ describe("настройки сервера", () => {
     ).toThrow(/ALLOWED_ORIGINS/);
   });
 });
+
+describe("служебный ключ базы", () => {
+  const withoutLegacy = (): Record<string, string> => {
+    const values = { ...FULL };
+    delete values.SUPABASE_SERVICE_ROLE_KEY;
+    return values;
+  };
+
+  it("новый набор ключей читается по имени default", () => {
+    const values = {
+      ...withoutLegacy(),
+      SUPABASE_SECRET_KEYS: JSON.stringify({
+        default: "sb_secret_новый",
+        billing: "sb_secret_чужой",
+      }),
+    };
+
+    expect(readServerConfig(reader(values)).db.serviceKey).toBe("sb_secret_новый");
+  });
+
+  it("набор без имени default берёт единственный ключ", () => {
+    const values = {
+      ...withoutLegacy(),
+      SUPABASE_SECRET_KEYS: JSON.stringify({ main: "sb_secret_единственный" }),
+    };
+
+    expect(readServerConfig(reader(values)).db.serviceKey).toBe("sb_secret_единственный");
+  });
+
+  it("новый набор важнее старого ключа", () => {
+    const values = { ...FULL, SUPABASE_SECRET_KEYS: JSON.stringify({ default: "sb_secret_новый" }) };
+
+    expect(readServerConfig(reader(values)).db.serviceKey).toBe("sb_secret_новый");
+  });
+
+  it("старый ключ работает, пока новых ключей нет", () => {
+    expect(readServerConfig(reader(FULL)).db.serviceKey).toBe("служебный-ключ");
+  });
+
+  it("без обоих переменных запуск падает и называет оба имени", () => {
+    expect(() => readServerConfig(reader(withoutLegacy()))).toThrow(
+      /SUPABASE_SECRET_KEYS.*SUPABASE_SERVICE_ROLE_KEY/,
+    );
+  });
+
+  it("испорченный набор ключей объясняется, а не роняет разбор JSON", () => {
+    const broken = { ...withoutLegacy(), SUPABASE_SECRET_KEYS: "{не json" };
+    expect(() => readServerConfig(reader(broken))).toThrow(/SUPABASE_SECRET_KEYS/);
+
+    const empty = { ...withoutLegacy(), SUPABASE_SECRET_KEYS: "{}" };
+    expect(() => readServerConfig(reader(empty))).toThrow(/ни одного ключа/);
+
+    const wrongShape = { ...withoutLegacy(), SUPABASE_SECRET_KEYS: '"sb_secret_строкой"' };
+    expect(() => readServerConfig(reader(wrongShape))).toThrow(/объектом/);
+  });
+});

@@ -7,7 +7,12 @@
  * заголовок не выдаётся вовсе — браузер сам отклонит ответ.
  */
 
-const ALLOWED_HEADERS = "authorization, content-type, x-neuroizium-signature";
+/**
+ * `apikey` обязателен в этом списке: браузер посылает публичный ключ проекта в
+ * каждом запросе, и без разрешения на этот заголовок предполётный запрос не
+ * проходит — то есть не работает вообще ничего, хотя сама функция исправна.
+ */
+const ALLOWED_HEADERS = "apikey, authorization, content-type, x-neuroizium-signature";
 
 export interface CorsPolicy {
   readonly allowedOrigins: readonly string[];

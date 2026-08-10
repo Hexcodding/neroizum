@@ -24,10 +24,20 @@ export class DbError extends Error {
   }
 }
 
+/**
+ * Ключи нового вида (`sb_secret_...`) — не JWT, и в заголовке Authorization
+ * платформа отвечает «Invalid JWT». Старые ключи-JWT наоборот привычно ждут
+ * Authorization. Различаем по виду ключа, а не по настройке: настройку забудут
+ * поменять при переходе, и база начнёт отказывать без внятной причины.
+ */
+function isJwtKey(serviceKey: string): boolean {
+  return !serviceKey.startsWith("sb_");
+}
+
 function headers(config: DbConfig, extra: Record<string, string> = {}): Record<string, string> {
   return {
     apikey: config.serviceKey,
-    authorization: `Bearer ${config.serviceKey}`,
+    ...(isJwtKey(config.serviceKey) ? { authorization: `Bearer ${config.serviceKey}` } : {}),
     "content-type": "application/json",
     ...extra,
   };

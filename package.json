@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:bundle": "node scripts/bundle-guard.mjs",
+    "admin-hash": "vite-node scripts/admin-hash.ts",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build && npm run check:bundle"
   },
   "dependencies": {

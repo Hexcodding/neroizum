@@ -59,6 +59,16 @@ describe("CORS", () => {
     expect(headers.vary).toBe("Origin");
   });
 
+  it("разрешены все заголовки, которые посылает браузер", () => {
+    const allowed = corsHeaders(ORIGIN, POLICY)["access-control-allow-headers"] ?? "";
+    const sent = allowed.split(",").map((header) => header.trim());
+
+    // apikey — публичный ключ проекта, он в каждом запросе из браузера.
+    expect(sent).toContain("apikey");
+    expect(sent).toContain("authorization");
+    expect(sent).toContain("content-type");
+  });
+
   it("предполётный запрос чужого сайта отклоняется", () => {
     const preflight = (origin: string): Response | null =>
       handlePreflight(
