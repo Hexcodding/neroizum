@@ -8,3 +8,4 @@ export * from "./post";
 export * from "./request";
 export * from "./dates";
 export * from "./schedule";
+export * from "./validation";

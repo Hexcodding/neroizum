@@ -5,7 +5,11 @@
   // а не силой воли разработчика.
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    // DOM здесь не для браузера, а ради fetch, AbortController и таймеров:
+    // они есть в Deno, но описаны именно в этой библиотеке типов. Браузерные
+    // объекты вроде document и window запрещены правилом линтера
+    // no-restricted-globals — см. eslint/layer-boundaries.js.
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",

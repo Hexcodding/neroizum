@@ -75,7 +75,24 @@ function clientLayerConfig(layer, index) {
   };
 }
 
-/** Серверный слой: без фреймворка и без знания о клиенте. */
+/**
+ * Браузерные глобальные объекты. Серверу доступны библиотеки типов с fetch и
+ * таймерами — без них не сделать вызов AI-провайдера, — но вместе с ними
+ * приходят document и window. Раньше от них защищала конфигурация типов без
+ * библиотеки DOM; теперь защищает этот список.
+ */
+const BROWSER_GLOBALS = [
+  "document",
+  "window",
+  "localStorage",
+  "sessionStorage",
+  "navigator",
+  "alert",
+  "location",
+  "history",
+];
+
+/** Серверный слой: без фреймворка, без клиента и без браузера. */
 const serverConfig = {
   files: ["server/**/*.ts"],
   rules: {
@@ -90,6 +107,13 @@ const serverConfig = {
           },
         ],
       },
+    ],
+    "no-restricted-globals": [
+      "error",
+      ...BROWSER_GLOBALS.map((name) => ({
+        name,
+        message: `${name} не существует на сервере: код выполняется в Deno, а не в браузере.`,
+      })),
     ],
   },
 };

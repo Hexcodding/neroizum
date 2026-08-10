@@ -20,6 +20,7 @@ import { buildVisualBlock } from "./blocks/visual";
 import { buildComplianceBlock } from "./blocks/compliance";
 import { buildScheduleBlock } from "./blocks/schedule";
 import { buildContinuationBlock } from "./blocks/continuation";
+import { buildRepairBlock } from "./blocks/repair";
 import { PROMPT_VERSION } from "./version";
 
 export interface BuiltPrompt {
@@ -30,9 +31,18 @@ export interface BuiltPrompt {
   readonly expectedPostCount: number;
 }
 
+export interface BuildOptions {
+  /**
+   * Причины, по которым предыдущая попытка этих постов не прошла проверку
+   * качества. Пусто при обычной генерации.
+   */
+  readonly repairReasons?: readonly string[];
+}
+
 export function buildPrompt(
   request: GenerationRequest,
   slots: readonly ScheduleSlot[],
+  options: BuildOptions = {},
 ): BuiltPrompt {
   if (slots.length === 0) {
     throw new Error("Расписание пустое: нечего генерировать");
@@ -50,6 +60,7 @@ export function buildPrompt(
     buildComplianceBlock(request.infoPlanMode),
     buildScheduleBlock(slots),
     buildContinuationBlock(request.previousPosts),
+    buildRepairBlock(options.repairReasons ?? []),
     OUTPUT_CONTRACT_BLOCK,
   ];
 
