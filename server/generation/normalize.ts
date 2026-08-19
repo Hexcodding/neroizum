@@ -63,6 +63,8 @@ function readVisualStyle(raw: Record<string, unknown>, slotNumber: number): stri
 }
 
 export function normalizePost(raw: Record<string, unknown>, slot: ScheduleSlot): GeneratedPost {
+  // Служебное поле _zeroClickCheck из схемы ответа здесь намеренно не читается:
+  // это черновик самопроверки модели, в сохранённый пост оно не входит.
   return {
     number: slot.number,
     date: slot.date,

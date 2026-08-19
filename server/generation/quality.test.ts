@@ -105,6 +105,27 @@ describe("проверка отдельного поста", () => {
     expect(report.defects[0]?.reasons.join(" ")).toMatch(/штамп/);
   });
 
+  it("ловит «большинство считает», «каждый из нас» и «на сегодняшний день»", () => {
+    const variants = [
+      "Большинство считает, что хлеб должен лежать в пакете.",
+      "Каждый из нас хотя бы раз выбрасывал чёрствую буханку.",
+    ];
+    for (const opener of variants) {
+      const report = check([makePost({ postContent: `${opener} ${LONG_TEXT}` })]);
+      expect(report.defects[0]?.reasons.join(" "), opener).toMatch(/штамп/);
+    }
+
+    const today = check([makePost({ title: "На сегодняшний день хлеб черствеет быстрее" })]);
+    expect(today.defects[0]?.reasons.join(" ")).toMatch(/штамп/);
+  });
+
+  it("ловит пустые оценки «уникальный» и «инновационный»", () => {
+    const unique = check([makePost({ postContent: `${LONG_TEXT} Это уникальный хлеб.` })]);
+    const innov = check([makePost({ title: "Инновационный подход к закваске" })]);
+    expect(unique.defects[0]?.reasons.join(" ")).toMatch(/уникальн/i);
+    expect(innov.defects[0]?.reasons.join(" ")).toMatch(/инновационн/i);
+  });
+
   it("живой текст без штампов проходит", () => {
     const report = check([
       makePost({

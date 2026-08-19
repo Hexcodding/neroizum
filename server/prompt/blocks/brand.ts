@@ -1,9 +1,9 @@
 /**
- * Профиль бренда: голос, продукты, доказательства, стоп-слова, образцы стиля.
+ * Профиль бренда: голос, стоп-слова, образцы стиля.
  *
- * Это второй по важности блок после Zero Click Value и второй ответ на вопрос
- * «чем вы отличаетесь от ChatGPT»: профиль собирается один раз и применяется
- * ко всем постам автоматически.
+ * Факты о бизнесе (продукты, доказательства) живут в <CLIENT_DATA> —
+ * blocks/client-data.ts. Здесь только то, КАК звучать: иначе модель смешает
+ * «что продаём» с «каким голосом» и начнёт копировать темы из образцов.
  *
  * Перенесено из третьей версии с одним исправлением: там профиль терялся
  * целиком в браузерном режиме генерации, потому что функция преобразования
@@ -40,20 +40,6 @@ export function buildBrandBlock(brand: BrandProfile, authorRole: AuthorRoleId): 
       ? `Голос бренда, соблюдай строго: ${userData("brand_tone", tone)}`
       : `Тональность по роли автора: ${TONE_BY_ROLE[authorRole]}`,
   );
-
-  const products = clampLine(brand.products, INPUT_LIMITS.products);
-  if (products.length > 0) {
-    parts.push(
-      `Продукты и предложения — упоминай ТОЛЬКО их, придумывать новые запрещено: ${userData("brand_products", products)}`,
-    );
-  }
-
-  const proof = clampLine(brand.proof, INPUT_LIMITS.proof);
-  if (proof.length > 0) {
-    parts.push(
-      `Факты доверия — используй в экспертных и продающих постах, не искажая: ${userData("brand_proof", proof)}`,
-    );
-  }
 
   const stopWords = clampList(
     brand.stopWords,

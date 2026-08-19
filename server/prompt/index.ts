@@ -10,7 +10,7 @@
 import type { GenerationRequest, ScheduleSlot } from "../../contracts/index.ts";
 import { ROLE_BLOCK } from "./core/role.ts";
 import { OUTPUT_CONTRACT_BLOCK } from "./core/output-contract.ts";
-import { buildBusinessBlock } from "./blocks/business.ts";
+import { buildClientDataBlock } from "./blocks/client-data.ts";
 import { buildBrandBlock } from "./blocks/brand.ts";
 import { buildFunnelBlock } from "./blocks/funnel.ts";
 import { buildRubricsBlock } from "./blocks/rubrics.ts";
@@ -51,7 +51,7 @@ export function buildPrompt(
 
   const blocks = [
     ROLE_BLOCK,
-    buildBusinessBlock(request),
+    buildClientDataBlock(request),
     buildBrandBlock(request.brand, request.authorRole),
     buildFunnelBlock(request.goal, request.channelStage, slots.length),
     buildRubricsBlock(),
