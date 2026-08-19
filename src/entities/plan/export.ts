@@ -25,7 +25,7 @@ export function toPlainText(title: string, posts: readonly GeneratedPost[]): str
         "",
         cta.length > 0 ? `Призыв: ${cta}` : "",
         post.hashtags.length > 0 ? post.hashtags.join(" ") : "",
-        `Картинка: ${post.visual}`,
+        `Изображение: ${post.visual}`,
         "",
         "— — —",
         "",
@@ -47,7 +47,7 @@ const CSV_HEADER = [
   "Текст поста",
   "Призыв",
   "Хештеги",
-  "Картинка",
+  "Изображение",
 ];
 
 /** Кавычки внутри поля удваиваются — иначе таблица разъедется на первой цитате. */

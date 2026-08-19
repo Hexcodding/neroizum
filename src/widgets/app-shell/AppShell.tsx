@@ -24,7 +24,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-border/60">
         <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-3 px-4 py-3">
-          <span className="text-sm font-semibold tracking-tight">НЕЙРОИЗЮМ</span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold tracking-tight">НЕЙРОИЗЮМ</span>
+            <span className="text-[11px] text-muted">генератор контент-плана</span>
+          </div>
 
           <nav className="flex gap-1" aria-label="Разделы">
             {LINKS.map((link) => (

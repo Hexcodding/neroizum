@@ -40,9 +40,11 @@ export default function LoginPage() {
       <header className="flex flex-col gap-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">НЕЙРОИЗЮМ</h1>
         <p className="text-sm leading-relaxed text-muted">
-          Контент-план на месяц за одну заявку: темы, тексты постов и даты публикации — сразу
-          готовые к выкладке.
+          Генератор контент-планов: готовые посты и промпты для генерации изображений.
         </p>
+        <span className="mx-auto inline-flex items-center rounded-full bg-secondary px-3 py-1 text-[11px] font-medium uppercase tracking-widest text-secondary-foreground">
+          Бета-тестирование
+        </span>
       </header>
 
       <Card className="p-5">

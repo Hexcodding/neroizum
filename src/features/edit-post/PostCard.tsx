@@ -67,7 +67,7 @@ export function PostCard({ post, onEdit }: PostCardProps) {
 
       <details className="text-sm">
         <summary className="cursor-pointer text-xs font-medium text-muted">
-          Картинка к посту
+          Изображение к посту
         </summary>
         <p className="mt-2 leading-relaxed">{post.visual}</p>
         <p className="mt-2 rounded-lg bg-secondary/40 p-2 font-mono text-xs leading-relaxed text-muted">
@@ -75,7 +75,7 @@ export function PostCard({ post, onEdit }: PostCardProps) {
         </p>
       </details>
 
-      <footer className="flex items-center gap-2">
+      <footer className="flex flex-wrap items-center gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -87,7 +87,7 @@ export function PostCard({ post, onEdit }: PostCardProps) {
         </Button>
         {onEdit !== undefined && (
           <Button variant="ghost" size="sm" onClick={onEdit}>
-            Изменить
+            Редактировать пост
           </Button>
         )}
       </footer>
