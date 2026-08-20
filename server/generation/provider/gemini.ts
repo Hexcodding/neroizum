@@ -14,8 +14,13 @@ import type { AiProvider, AiRequest, AiResponse } from "./types.ts";
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-/** Порядок каскада: сначала быстрая и дешёвая, потом умнее и дороже. */
-export const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"] as const;
+/**
+ * Работаем одной моделью. Каскад из трёх подменял причину отказа: перебор
+ * заканчивался на самой старой модели, и наружу уходила её ошибка, а не та,
+ * из-за которой всё началось. Исчерпанная суточная норма 2.5 Flash выглядела
+ * для пользователя как «сервис не отвечает», и совет в сообщении был неверным.
+ */
+export const GEMINI_MODELS = ["gemini-2.5-flash"] as const;
 
 const SAFETY_CATEGORIES = [
   "HARM_CATEGORY_HARASSMENT",
