@@ -34,14 +34,18 @@
 
 ### Применить миграции
 
-В панели Supabase откройте SQL Editor и выполните два файла по порядку, каждый целиком:
+В панели Supabase откройте SQL Editor и выполните файлы по порядку, каждый целиком:
 
 ```
 server/db/migrations/0001_core.sql
 server/db/migrations/0002_quota_functions.sql
+server/db/migrations/0003_improvements.sql
+server/db/migrations/0004_images.sql
 ```
 
 Сначала на проекте `neuroizium-dev`. На боевом — только после того, как на разработческом всё проверено.
+
+Третья и четвёртая добавляют счётчики улучшений и картинок, а четвёртая ещё и создаёт закрытый бакет `post-images`. Пока они не применены, кнопки «Переделать» и «Нарисовать» будут отказывать: ни функций `reserve_improvement` и `reserve_image`, ни колонок `improvement_limit`, `image_limit` и `image_path` в базе нет.
 
 Отдельно стоит поставить вызов уборки по расписанию (Database → Cron): `select public.cleanup_access_data();` раз в сутки. Без него таблицы сессий, попыток и брошенных резервов растут без предела.
 

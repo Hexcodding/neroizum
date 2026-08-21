@@ -14,19 +14,72 @@ import { Button } from "@/shared/ui/Button";
 import { cn } from "@/shared/lib/cn";
 import { PostCard } from "@/features/edit-post/PostCard";
 import { PostEditor } from "@/features/edit-post/PostEditor";
+import type { ImproveOffer } from "@/features/edit-post/ImprovePost";
+import type { ImageOffer } from "@/features/edit-post/PostImage";
+import type { QuotaStatus } from "@/shared/api/endpoints";
 import { PlanCalendar } from "./PlanCalendar";
+
+/** Предложение улучшить конкретный пост. Нет вызова — нет и блока в редакторе. */
+function improveOffer(
+  number: number,
+  improvements: QuotaStatus | null,
+  onImprovePost?: (number: number, instruction: string) => Promise<GeneratedPost>,
+): ImproveOffer | undefined {
+  if (onImprovePost === undefined) return undefined;
+  return {
+    left: improvements?.left ?? null,
+    limit: improvements?.limit ?? null,
+    run: (instruction) => onImprovePost(number, instruction),
+  };
+}
+
+/** То же самое для картинки: нет вызова — нет и блока. */
+function imageOffer(
+  number: number,
+  images: QuotaStatus | null,
+  url: string | undefined,
+  onMakeImage?: (number: number) => Promise<string>,
+): ImageOffer | undefined {
+  if (onMakeImage === undefined) return undefined;
+  return {
+    left: images?.left ?? null,
+    limit: images?.limit ?? null,
+    url: url ?? null,
+    run: () => onMakeImage(number),
+  };
+}
 
 export interface PlanViewProps {
   readonly title: string;
   readonly posts: readonly GeneratedPost[];
   /** Правка доступна только у сохранённого плана: править нечего, пока идёт генерация. */
   readonly onSavePost?: (post: GeneratedPost) => Promise<void>;
+  /** Переделать пост через модель. Как и правка — только у сохранённого плана. */
+  readonly onImprovePost?: (number: number, instruction: string) => Promise<GeneratedPost>;
+  /** Остаток улучшений на месяц: показывается в редакторе, где и тратится. */
+  readonly improvements?: QuotaStatus | null;
+  /** Нарисовать картинку к посту. Возвращает ссылку на готовую. */
+  readonly onMakeImage?: (number: number) => Promise<string>;
+  /** Остаток картинок на месяц. */
+  readonly images?: QuotaStatus | null;
+  /** Уже нарисованные картинки: номер поста → ссылка. */
+  readonly imageUrls?: Readonly<Record<number, string>>;
   readonly children?: React.ReactNode;
 }
 
 type Mode = "list" | "calendar";
 
-export function PlanView({ title, posts, onSavePost, children }: PlanViewProps) {
+export function PlanView({
+  title,
+  posts,
+  onSavePost,
+  onImprovePost,
+  improvements = null,
+  onMakeImage,
+  images = null,
+  imageUrls = {},
+  children,
+}: PlanViewProps) {
   const [mode, setMode] = useState<Mode>("list");
   const [editing, setEditing] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -118,6 +171,8 @@ export function PlanView({ title, posts, onSavePost, children }: PlanViewProps) 
                     key={post.number}
                     post={post}
                     saving={saving}
+                    improve={improveOffer(post.number, improvements, onImprovePost)}
+                    image={imageOffer(post.number, images, imageUrls[post.number], onMakeImage)}
                     onSave={(edited) => {
                       void save(edited);
                     }}
@@ -129,6 +184,7 @@ export function PlanView({ title, posts, onSavePost, children }: PlanViewProps) 
                   <PostCard
                     key={post.number}
                     post={post}
+                    imageUrl={imageUrls[post.number]}
                     onEdit={
                       onSavePost === undefined
                         ? undefined

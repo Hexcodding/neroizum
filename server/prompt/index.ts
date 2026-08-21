@@ -35,9 +35,12 @@ export interface BuiltPrompt {
 export interface BuildOptions {
   /**
    * Причины, по которым предыдущая попытка этих постов не прошла проверку
-   * качества. Пусто при обычной генерации.
+   * качества, либо просьба человека переделать пост. Пусто при обычной
+   * генерации.
    */
   readonly repairReasons?: readonly string[];
+  /** Текущий текст поста: нужен, когда переделываем по просьбе человека. */
+  readonly currentPost?: string;
 }
 
 export function buildPrompt(
@@ -62,7 +65,10 @@ export function buildPrompt(
     buildComplianceBlock(request.infoPlanMode),
     buildScheduleBlock(slots),
     buildContinuationBlock(request.previousPosts),
-    buildRepairBlock(options.repairReasons ?? []),
+    buildRepairBlock({
+      reasons: options.repairReasons ?? [],
+      currentPost: options.currentPost,
+    }),
     OUTPUT_CONTRACT_BLOCK,
   ];
 

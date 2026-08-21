@@ -30,9 +30,15 @@ export function createMemoryAdminLicenseStore(): MemoryAdminLicenseStore {
         disabled: false,
         subscriptionUntil: row.subscriptionUntil,
         monthlyLimit: row.monthlyLimit,
+        // Значения по умолчанию из базы: при выдаче ключа улучшения и картинки
+        // отдельно не назначаются, администратор меняет их потом при надобности.
+        improvementLimit: 30,
+        imageLimit: 30,
         note: row.note,
         createdAt: "2026-03-15T00:00:00.000Z",
         usedThisMonth: 0,
+        improvementsThisMonth: 0,
+        imagesThisMonth: 0,
       });
       return Promise.resolve(id);
     },
@@ -51,6 +57,14 @@ export function createMemoryAdminLicenseStore(): MemoryAdminLicenseStore {
 
     setMonthlyLimit(licenseId: string, monthlyLimit: number): Promise<void> {
       return patch(licenseId, { monthlyLimit });
+    },
+
+    setImprovementLimit(licenseId: string, improvementLimit: number): Promise<void> {
+      return patch(licenseId, { improvementLimit });
+    },
+
+    setImageLimit(licenseId: string, imageLimit: number): Promise<void> {
+      return patch(licenseId, { imageLimit });
     },
 
     setSubscriptionUntil(licenseId: string, subscriptionUntil: string): Promise<void> {

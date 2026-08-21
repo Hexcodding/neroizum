@@ -53,11 +53,11 @@ function requireIsoDate(value: string): void {
   }
 }
 
-function requireLimit(value: number): void {
+function requireLimit(value: number, what = "генераций"): void {
   const whole = Number.isInteger(value);
   if (!whole || value < LIMIT_BOUNDS.min || value > LIMIT_BOUNDS.max) {
     throw new AdminInputError(
-      `Лимит генераций в месяц — целое число от ${String(LIMIT_BOUNDS.min)} до ${String(LIMIT_BOUNDS.max)}`,
+      `Лимит ${what} в месяц — целое число от ${String(LIMIT_BOUNDS.min)} до ${String(LIMIT_BOUNDS.max)}`,
     );
   }
 }
@@ -125,6 +125,29 @@ export async function changeMonthlyLimit(
   requireLimit(monthlyLimit);
   await deps.licenses.setMonthlyLimit(licenseId, monthlyLimit);
   await deps.log.record("license.limit-changed", deps.actorLabel, { licenseId, monthlyLimit });
+}
+
+export async function changeImprovementLimit(
+  licenseId: string,
+  improvementLimit: number,
+  deps: AdminDeps,
+): Promise<void> {
+  requireLimit(improvementLimit, "улучшений постов");
+  await deps.licenses.setImprovementLimit(licenseId, improvementLimit);
+  await deps.log.record("license.improvement-limit-changed", deps.actorLabel, {
+    licenseId,
+    improvementLimit,
+  });
+}
+
+export async function changeImageLimit(
+  licenseId: string,
+  imageLimit: number,
+  deps: AdminDeps,
+): Promise<void> {
+  requireLimit(imageLimit, "картинок");
+  await deps.licenses.setImageLimit(licenseId, imageLimit);
+  await deps.log.record("license.image-limit-changed", deps.actorLabel, { licenseId, imageLimit });
 }
 
 export async function changeSubscriptionUntil(

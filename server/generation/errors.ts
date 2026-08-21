@@ -17,7 +17,10 @@ export type GenerationErrorCode =
   | "BAD_RESPONSE"
   | "STOPPED_BY_USER"
   | "QUOTA_EXCEEDED"
+  | "IMPROVEMENTS_EXCEEDED"
+  | "IMAGES_EXCEEDED"
   | "PLAN_NOT_FOUND"
+  | "POST_NOT_FOUND"
   | "INTERNAL";
 
 interface ErrorPresentation {
@@ -68,8 +71,25 @@ const PRESENTATION: Readonly<Record<GenerationErrorCode, ErrorPresentation>> = {
     retryable: false,
     httpStatus: 403,
   },
+  IMPROVEMENTS_EXCEEDED: {
+    userMessage:
+      "На этот месяц улучшения постов закончились. Счётчик обновится в начале следующего месяца — правку руками это не ограничивает.",
+    retryable: false,
+    httpStatus: 403,
+  },
+  IMAGES_EXCEEDED: {
+    userMessage:
+      "На этот месяц картинки закончились. Счётчик обновится в начале следующего месяца — тексты и правки это не ограничивает.",
+    retryable: false,
+    httpStatus: 403,
+  },
   PLAN_NOT_FOUND: {
     userMessage: "Такого плана нет. Возможно, он удалён — откройте список планов заново.",
+    retryable: false,
+    httpStatus: 404,
+  },
+  POST_NOT_FOUND: {
+    userMessage: "Этот пост уже не найден в плане. Откройте план заново — правки сохранены.",
     retryable: false,
     httpStatus: 404,
   },

@@ -35,19 +35,22 @@ export interface QuotaStatus {
   readonly left: number;
 }
 
+export interface QuotaResponse {
+  readonly quota: QuotaStatus;
+  /** Улучшения постов считаются отдельно от планов: обращение к модели дешевле. */
+  readonly improvements: QuotaStatus;
+  /** Картинки — третий счётчик: одна картинка дороже всего плана текстом. */
+  readonly images: QuotaStatus;
+  readonly subscriptionUntil: string;
+}
+
 /**
  * Остаток генераций. Спрашивается у сервера, а не считается в браузере:
  * генерации расходуются и с другого устройства, а месяц заканчивается по
  * календарю сервера, а не по часовому поясу телефона.
  */
-export async function fetchQuota(
-  token: string,
-): Promise<{ readonly quota: QuotaStatus; readonly subscriptionUntil: string }> {
-  return await callFunction<{ quota: QuotaStatus; subscriptionUntil: string }>(
-    "plans",
-    { action: "quota" },
-    { token },
-  );
+export async function fetchQuota(token: string): Promise<QuotaResponse> {
+  return await callFunction<QuotaResponse>("plans", { action: "quota" }, { token });
 }
 
 export interface PlanSummary {
@@ -66,6 +69,11 @@ export interface StoredPlan {
   readonly promptVersion: string;
   readonly request: unknown;
   readonly posts: readonly GeneratedPost[];
+  /**
+   * Готовые картинки: номер поста → ссылка. Ссылки подписаны на час, поэтому
+   * сохранять их дольше открытой страницы бессмысленно.
+   */
+  readonly imageUrls?: Readonly<Record<number, string>>;
 }
 
 export async function fetchPlans(token: string): Promise<readonly PlanSummary[]> {
@@ -96,6 +104,56 @@ export async function savePostEdit(
 
 export async function deletePlan(token: string, planId: string): Promise<void> {
   await callFunction<{ ok: boolean }>("plans", { action: "delete", planId }, { token });
+}
+
+export interface ImprovedPost {
+  readonly post: GeneratedPost;
+  /** Остаток улучшений после этого: считать его в браузере нельзя. */
+  readonly improvements: QuotaStatus;
+}
+
+/**
+ * Переделать один пост по просьбе человека. Отвечает обычным JSON, а не
+ * потоком: один пост собирается за одно обращение к модели, показывать по
+ * частям нечего. Сервер сохраняет результат сам — прежний текст остаётся
+ * только в браузере, поэтому вернуть его можно, пока открыт редактор.
+ */
+export async function improvePost(
+  token: string,
+  planId: string,
+  number: number,
+  instruction: string,
+): Promise<ImprovedPost> {
+  return await callFunction<ImprovedPost>(
+    "generate-plan",
+    { planId, number, instruction },
+    { token, path: "/improve" },
+  );
+}
+
+export interface GeneratedImage {
+  readonly imageUrl: string;
+  /** Остаток картинок после этой: считать его в браузере нельзя. */
+  readonly images: QuotaStatus;
+}
+
+/**
+ * Нарисовать картинку к одному посту. По кнопке и по одной: тридцать картинок
+ * к плану стоят дороже самого плана в разы, а половина из них не нужна.
+ *
+ * Промпт для картинки сервер берёт из самого поста, поэтому здесь только адрес
+ * поста в плане.
+ */
+export async function generatePostImage(
+  token: string,
+  planId: string,
+  number: number,
+): Promise<GeneratedImage> {
+  return await callFunction<GeneratedImage>(
+    "generate-plan",
+    { planId, number },
+    { token, path: "/image" },
+  );
 }
 
 /** Генерация отвечает потоком, поэтому здесь возвращается сам поток. */

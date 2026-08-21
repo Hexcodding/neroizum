@@ -157,6 +157,8 @@ export function makeLicense(overrides: Partial<LicenseRecord> = {}): LicenseReco
     disabled: false,
     subscriptionUntil: "2026-12-31",
     monthlyLimit: 20,
+    improvementLimit: 30,
+    imageLimit: 30,
     ...overrides,
   };
 }

@@ -5,6 +5,7 @@ import { ADMIN_SESSION_LIFETIME_MS, adminLogin, verifyAdminToken } from "./auth.
 import type { AdminAuthConfig } from "./auth.ts";
 import {
   AdminInputError,
+  changeImprovementLimit,
   changeMonthlyLimit,
   changeSubscriptionUntil,
   issueLicense,
@@ -142,6 +143,29 @@ describe("управление лицензией", () => {
       "license.limit-changed",
       "license.subscription-changed",
     ]);
+  });
+
+  it("улучшения постов имеют свой лимит и меняются отдельно от планов", async () => {
+    const deps = makeDeps();
+    const issued = await issueLicense(VALID, deps);
+
+    await changeImprovementLimit(issued.licenseId, 100, deps);
+
+    const row = deps.store.rows.get(issued.licenseId);
+    expect(row?.improvementLimit).toBe(100);
+    expect(row?.monthlyLimit).toBe(VALID.monthlyLimit);
+    expect(deps.log.entries.map((entry) => entry.action)).toContain(
+      "license.improvement-limit-changed",
+    );
+  });
+
+  it("нелепый лимит улучшений отклоняется словами про улучшения", async () => {
+    const deps = makeDeps();
+    const issued = await issueLicense(VALID, deps);
+
+    await expect(changeImprovementLimit(issued.licenseId, 0, deps)).rejects.toThrow(
+      /Лимит улучшений постов/,
+    );
   });
 
   it("сброс сессии отличается в журнале от блокировки", async () => {

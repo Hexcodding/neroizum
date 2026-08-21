@@ -128,6 +128,12 @@ function AdminConsole({ token, onLeave }: { token: string; onLeave: () => void }
                 onSetLimit={(limit) => {
                   void state.setLimit(license.id, limit);
                 }}
+                onSetImprovementLimit={(limit) => {
+                  void state.setImprovementLimit(license.id, limit);
+                }}
+                onSetImageLimit={(limit) => {
+                  void state.setImageLimit(license.id, limit);
+                }}
                 onSetSubscription={(until) => {
                   void state.setSubscription(license.id, until);
                 }}

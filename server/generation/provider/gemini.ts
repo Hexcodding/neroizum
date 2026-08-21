@@ -8,11 +8,19 @@
  *   ресторана, и клиент получит пустой ответ без объяснений;
  * — таймаут: запрос не может висеть бесконечно;
  * — остановка пользователем доводится до самого сетевого запроса.
+ *
+ * Общее с вызовом модели картинок — адрес, пороги фильтров, перевод отказа в
+ * нашу ошибку — лежит в google.ts.
  */
 import { GenerationError } from "../errors.ts";
+import {
+  failByStatus,
+  GOOGLE_API_BASE,
+  SAFETY_SETTINGS,
+  toProviderError,
+  withTimeout,
+} from "./google.ts";
 import type { AiProvider, AiRequest, AiResponse } from "./types.ts";
-
-const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 /**
  * Работаем одной моделью. Каскад из трёх подменял причину отказа: перебор
@@ -21,23 +29,6 @@ const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
  * для пользователя как «сервис не отвечает», и совет в сообщении был неверным.
  */
 export const GEMINI_MODELS = ["gemini-2.5-flash"] as const;
-
-const SAFETY_CATEGORIES = [
-  "HARM_CATEGORY_HARASSMENT",
-  "HARM_CATEGORY_HATE_SPEECH",
-  "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-  "HARM_CATEGORY_DANGEROUS_CONTENT",
-] as const;
-
-/**
- * Блокируем только явно опасное. Планы контента для малого бизнеса регулярно
- * задевают темы, которые срабатывают на средних порогах: медицина, юридические
- * услуги, бары. Ложная блокировка выглядит для клиента как поломка продукта.
- */
-const SAFETY_SETTINGS = SAFETY_CATEGORIES.map((category) => ({
-  category,
-  threshold: "BLOCK_ONLY_HIGH",
-}));
 
 interface GeminiCandidate {
   readonly finishReason?: string;
@@ -53,41 +44,6 @@ function readText(payload: GeminiPayload): string {
   const parts = payload.candidates?.[0]?.content?.parts;
   if (parts === undefined) return "";
   return parts.map((part) => part.text ?? "").join("");
-}
-
-function failByStatus(status: number, body: string): GenerationError {
-  if (status === 429) {
-    return new GenerationError("RATE_LIMITED", `Gemini 429: ${body.slice(0, 300)}`);
-  }
-  if (status === 400 && body.includes("API_KEY_INVALID")) {
-    // Ключ настраиваем мы, а не клиент: для него это наша внутренняя поломка.
-    return new GenerationError("INTERNAL", "Ключ Gemini недействителен");
-  }
-  if (status >= 500 || status === 408) {
-    return new GenerationError("PROVIDER_UNAVAILABLE", `Gemini ${String(status)}`);
-  }
-  return new GenerationError("PROVIDER_UNAVAILABLE", `Gemini ${String(status)}: ${body.slice(0, 300)}`);
-}
-
-/** Таймаут и остановка пользователем — один сигнал для fetch. */
-function withTimeout(request: AiRequest): { signal: AbortSignal; done: () => void } {
-  const controller = new AbortController();
-  const timer = setTimeout(() => {
-    controller.abort(new GenerationError("TIMEOUT", "Провайдер не ответил за отведённое время"));
-  }, request.timeoutMs);
-
-  const onExternalAbort = () => {
-    controller.abort(new GenerationError("STOPPED_BY_USER", "Генерация остановлена"));
-  };
-  request.signal?.addEventListener("abort", onExternalAbort, { once: true });
-
-  return {
-    signal: controller.signal,
-    done: () => {
-      clearTimeout(timer);
-      request.signal?.removeEventListener("abort", onExternalAbort);
-    },
-  };
 }
 
 /**
@@ -129,7 +85,7 @@ export function createGeminiProvider(apiKey: string): AiProvider {
       const { signal, done } = withTimeout(request);
 
       try {
-        const response = await fetch(`${API_BASE}/${model}:generateContent`, {
+        const response = await fetch(`${GOOGLE_API_BASE}/${model}:generateContent`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: buildBody(model, request),
@@ -152,12 +108,7 @@ export function createGeminiProvider(apiKey: string): AiProvider {
           model,
         };
       } catch (error) {
-        // Причина прерывания — уже готовая ошибка: таймаут или остановка.
-        if (signal.aborted && signal.reason instanceof GenerationError) {
-          throw signal.reason;
-        }
-        if (error instanceof GenerationError) throw error;
-        throw new GenerationError("PROVIDER_UNAVAILABLE", `Сеть недоступна: ${String(error)}`);
+        throw toProviderError(error, signal);
       } finally {
         done();
       }

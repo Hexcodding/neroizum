@@ -32,6 +32,10 @@ export interface PlansDeps {
    * попыток, своим CORS и своим шансом ошибиться в проверке доступа.
    */
   readonly quota: Omit<QuotaContext, "licenseId">;
+  /** Остаток улучшений постов: считается отдельно от планов, показывается вместе. */
+  readonly improvements: Omit<QuotaContext, "licenseId">;
+  /** Остаток картинок: третий счётчик, тем же ответом. */
+  readonly images: Omit<QuotaContext, "licenseId">;
 }
 
 const ACTIONS = ["list", "get", "update-post", "delete", "quota"] as const;
@@ -101,8 +105,13 @@ async function runAction(
 
     case "quota": {
       const quota = await readQuotaStatus({ ...deps.quota, licenseId }, license.monthlyLimit);
+      const improvements = await readQuotaStatus(
+        { ...deps.improvements, licenseId },
+        license.improvementLimit,
+      );
+      const images = await readQuotaStatus({ ...deps.images, licenseId }, license.imageLimit);
       return jsonResponse(
-        { quota, subscriptionUntil: license.subscriptionUntil },
+        { quota, improvements, images, subscriptionUntil: license.subscriptionUntil },
         200,
         response,
       );

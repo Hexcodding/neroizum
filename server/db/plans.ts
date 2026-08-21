@@ -136,6 +136,12 @@ export interface StoredPlan {
   readonly promptVersion: string;
   readonly request: unknown;
   readonly posts: readonly GeneratedPost[];
+  /**
+   * Пути картинок в хранилище: номер поста → путь. Отдельно от постов, потому
+   * что картинка живёт не в payload — payload перезаписывается целиком при
+   * правке и при переделке поста, и картинка исчезала бы вместе с ним.
+   */
+  readonly imagePaths: Readonly<Record<number, string>>;
 }
 
 interface FullPlanRow {
@@ -144,7 +150,11 @@ interface FullPlanRow {
   readonly created_at: string;
   readonly prompt_version: string;
   readonly request: unknown;
-  readonly posts: { readonly number: number; readonly payload: GeneratedPost }[];
+  readonly posts: {
+    readonly number: number;
+    readonly payload: GeneratedPost;
+    readonly image_path: string | null;
+  }[];
 }
 
 /**
@@ -159,9 +169,14 @@ export async function loadPlan(
   const row = await selectOne<FullPlanRow>(
     config,
     "content_plans",
-    `id=eq.${planId}&license_id=eq.${licenseId}&select=id,title,created_at,prompt_version,request,posts(number,payload)`,
+    `id=eq.${planId}&license_id=eq.${licenseId}&select=id,title,created_at,prompt_version,request,posts(number,payload,image_path)`,
   );
   if (row === null) return null;
+
+  const imagePaths: Record<number, string> = {};
+  for (const post of row.posts) {
+    if (post.image_path !== null) imagePaths[post.number] = post.image_path;
+  }
 
   return {
     id: row.id,
@@ -170,7 +185,33 @@ export async function loadPlan(
     promptVersion: row.prompt_version,
     request: row.request,
     posts: [...row.posts].sort((left, right) => left.number - right.number).map((post) => post.payload),
+    imagePaths,
   };
+}
+
+/**
+ * Ссылка на готовую картинку. Владелец снова проверяется условием запроса, а
+ * не отдельной проверкой: чужой план просто не находится.
+ */
+export async function setPostImage(
+  config: DbConfig,
+  licenseId: string,
+  planId: string,
+  postNumber: number,
+  path: string,
+): Promise<boolean> {
+  const owned = await selectOne<{ id: string }>(
+    config,
+    "content_plans",
+    `id=eq.${planId}&license_id=eq.${licenseId}&select=id`,
+  );
+  if (owned === null) return false;
+
+  await update(config, "posts", `plan_id=eq.${planId}&number=eq.${String(postNumber)}`, {
+    image_path: path,
+    updated_at: new Date().toISOString(),
+  });
+  return true;
 }
 
 /** Правка поста человеком. Возвращает false, если план принадлежит другому. */

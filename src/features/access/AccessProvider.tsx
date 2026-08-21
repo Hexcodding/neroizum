@@ -18,6 +18,8 @@ export function AccessProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(() => readSession());
   const [checking, setChecking] = useState(false);
   const [quota, setQuota] = useState<QuotaStatus | null>(null);
+  const [improvements, setImprovements] = useState<QuotaStatus | null>(null);
+  const [images, setImages] = useState<QuotaStatus | null>(null);
 
   const refreshQuota = useCallback(async (): Promise<void> => {
     const token = session?.token;
@@ -25,10 +27,14 @@ export function AccessProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await fetchQuota(token);
       setQuota(result.quota);
+      setImprovements(result.improvements);
+      setImages(result.images);
     } catch {
       // Остаток — сведение, а не условие работы. Не ответил сервер — просто не
       // показываем цифру, вместо того чтобы пугать человека ошибкой.
       setQuota(null);
+      setImprovements(null);
+      setImages(null);
     }
   }, [session]);
 
@@ -51,6 +57,8 @@ export function AccessProvider({ children }: { children: React.ReactNode }) {
     clearSession();
     setSession(null);
     setQuota(null);
+    setImprovements(null);
+    setImages(null);
   }, []);
 
   const leave = useCallback(async (): Promise<void> => {
@@ -67,8 +75,20 @@ export function AccessProvider({ children }: { children: React.ReactNode }) {
   }, [session, forget]);
 
   const value = useMemo<AccessState>(
-    () => ({ session, checking, quota, enter, leave, expire: forget, refreshQuota }),
-    [session, checking, quota, enter, leave, forget, refreshQuota],
+    () => ({
+      session,
+      checking,
+      quota,
+      improvements,
+      images,
+      enter,
+      leave,
+      expire: forget,
+      refreshQuota,
+      noteImprovements: setImprovements,
+      noteImages: setImages,
+    }),
+    [session, checking, quota, improvements, images, enter, leave, forget, refreshQuota],
   );
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;

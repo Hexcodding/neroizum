@@ -17,10 +17,12 @@ import { Button } from "@/shared/ui/Button";
 
 export interface PostCardProps {
   readonly post: GeneratedPost;
+  /** Нарисованная картинка, если она уже есть. Рисуется в редакторе поста. */
+  readonly imageUrl?: string;
   readonly onEdit?: () => void;
 }
 
-export function PostCard({ post, onEdit }: PostCardProps) {
+export function PostCard({ post, imageUrl, onEdit }: PostCardProps) {
   const [copied, setCopied] = useState(false);
   const cta = separateCta(post);
 
@@ -49,6 +51,14 @@ export function PostCard({ post, onEdit }: PostCardProps) {
       </header>
 
       <h3 className="text-base font-semibold leading-snug">{post.title}</h3>
+
+      {imageUrl !== undefined && (
+        <img
+          src={imageUrl}
+          alt={post.visual.length > 0 ? post.visual : "Картинка к посту"}
+          className="w-full rounded-lg border border-border/60"
+        />
+      )}
 
       <p className="whitespace-pre-wrap text-sm leading-relaxed">{post.postContent}</p>
 

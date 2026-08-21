@@ -9,14 +9,16 @@ import { useState } from "react";
 import type { LicenseSummary } from "@/shared/api/admin";
 import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
-import { Input } from "@/shared/ui/Input";
 import { cn } from "@/shared/lib/cn";
+import { LicenseLimits } from "./LicenseLimits";
 
 export interface LicenseCardProps {
   readonly license: LicenseSummary;
   readonly busy: boolean;
   readonly onSetDisabled: (disabled: boolean) => void;
   readonly onSetLimit: (limit: number) => void;
+  readonly onSetImprovementLimit: (limit: number) => void;
+  readonly onSetImageLimit: (limit: number) => void;
   readonly onSetSubscription: (until: string) => void;
   readonly onResetSession: () => void;
 }
@@ -24,8 +26,6 @@ export interface LicenseCardProps {
 export function LicenseCard(props: LicenseCardProps) {
   const { license, busy } = props;
   const [editing, setEditing] = useState(false);
-  const [until, setUntil] = useState(license.subscriptionUntil);
-  const [limit, setLimit] = useState(String(license.monthlyLimit));
 
   return (
     <Card className="flex flex-col gap-3 p-4">
@@ -56,63 +56,35 @@ export function LicenseCard(props: LicenseCardProps) {
           </dd>
         </div>
         <div>
+          <dt className="inline">Улучшений </dt>
+          <dd className="inline text-foreground">
+            {license.improvementsThisMonth} из {license.improvementLimit}
+          </dd>
+        </div>
+        <div>
+          <dt className="inline">Картинок </dt>
+          <dd className="inline text-foreground">
+            {license.imagesThisMonth} из {license.imageLimit}
+          </dd>
+        </div>
+        <div>
           <dt className="inline">Выдан </dt>
           <dd className="inline text-foreground">{license.createdAt.slice(0, 10)}</dd>
         </div>
       </dl>
 
       {editing ? (
-        <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-xs text-muted">
-              Продлить до
-              <Input
-                type="date"
-                value={until}
-                onChange={(event) => {
-                  setUntil(event.target.value);
-                }}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted">
-              Новый лимит планов
-              <Input
-                type="number"
-                min={1}
-                max={500}
-                value={limit}
-                onChange={(event) => {
-                  setLimit(event.target.value);
-                }}
-              />
-            </label>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              disabled={busy}
-              onClick={() => {
-                if (until !== license.subscriptionUntil) props.onSetSubscription(until);
-                if (Number(limit) !== license.monthlyLimit) props.onSetLimit(Number(limit));
-                setEditing(false);
-              }}
-            >
-              Сохранить
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setUntil(license.subscriptionUntil);
-                setLimit(String(license.monthlyLimit));
-                setEditing(false);
-              }}
-            >
-              Отмена
-            </Button>
-          </div>
-        </div>
+        <LicenseLimits
+          license={license}
+          busy={busy}
+          onSetLimit={props.onSetLimit}
+          onSetImprovementLimit={props.onSetImprovementLimit}
+          onSetImageLimit={props.onSetImageLimit}
+          onSetSubscription={props.onSetSubscription}
+          onClose={() => {
+            setEditing(false);
+          }}
+        />
       ) : (
         <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
           <Button

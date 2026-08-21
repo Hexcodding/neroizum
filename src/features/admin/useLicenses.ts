@@ -11,6 +11,8 @@ import {
   adminLicenses,
   adminResetSession,
   adminSetDisabled,
+  adminSetImageLimit,
+  adminSetImprovementLimit,
   adminSetLimit,
   adminSetSubscription,
 } from "@/shared/api/admin";
@@ -26,6 +28,8 @@ export interface LicensesState {
   reload(): Promise<void>;
   setDisabled(licenseId: string, disabled: boolean): Promise<void>;
   setLimit(licenseId: string, monthlyLimit: number): Promise<void>;
+  setImprovementLimit(licenseId: string, improvementLimit: number): Promise<void>;
+  setImageLimit(licenseId: string, imageLimit: number): Promise<void>;
   setSubscription(licenseId: string, until: string): Promise<void>;
   resetSession(licenseId: string): Promise<void>;
 }
@@ -75,6 +79,10 @@ export function useLicenses(token: string | null): LicensesState {
       run(licenseId, (key) => adminSetDisabled(key, licenseId, disabled)),
     setLimit: (licenseId, monthlyLimit) =>
       run(licenseId, (key) => adminSetLimit(key, licenseId, monthlyLimit)),
+    setImprovementLimit: (licenseId, improvementLimit) =>
+      run(licenseId, (key) => adminSetImprovementLimit(key, licenseId, improvementLimit)),
+    setImageLimit: (licenseId, imageLimit) =>
+      run(licenseId, (key) => adminSetImageLimit(key, licenseId, imageLimit)),
     setSubscription: (licenseId, until) =>
       run(licenseId, (key) => adminSetSubscription(key, licenseId, until)),
     resetSession: (licenseId) => run(licenseId, (key) => adminResetSession(key, licenseId)),

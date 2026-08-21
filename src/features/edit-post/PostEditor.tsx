@@ -13,15 +13,26 @@ import { Field } from "@/shared/ui/Field";
 import { Input, Textarea } from "@/shared/ui/Input";
 import { Notice } from "@/shared/ui/Feedback";
 import { platformName } from "@/entities/post/view";
+import type { ImproveOffer } from "./ImprovePost";
+import type { ImageOffer } from "./PostImage";
+import { PostStudio } from "./PostStudio";
+import { PostTools } from "./PostTools";
 
 export interface PostEditorProps {
   readonly post: GeneratedPost;
   readonly saving: boolean;
   readonly onSave: (post: GeneratedPost) => void;
   readonly onCancel: () => void;
+  /**
+   * Переделать пост через модель. Не передано — блок просьб не показывается:
+   * пока идёт генерация плана, улучшать ещё нечего.
+   */
+  readonly improve?: ImproveOffer;
+  /** Нарисовать картинку. Не передано — блока нет, как и у переделки. */
+  readonly image?: ImageOffer;
 }
 
-export function PostEditor({ post, saving, onSave, onCancel }: PostEditorProps) {
+export function PostEditor({ post, saving, onSave, onCancel, improve, image }: PostEditorProps) {
   const [draft, setDraft] = useState<GeneratedPost>(post);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -79,6 +90,8 @@ export function PostEditor({ post, saving, onSave, onCancel }: PostEditorProps) 
         )}
       </Field>
 
+      <PostStudio draft={draft} />
+
       <Field label="Призыв к действию" error={errors.cta}>
         {({ id, describedBy, invalid }) => (
           <Input
@@ -93,37 +106,7 @@ export function PostEditor({ post, saving, onSave, onCancel }: PostEditorProps) 
         )}
       </Field>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Дата" error={errors.date}>
-          {({ id, describedBy, invalid }) => (
-            <Input
-              id={id}
-              type="date"
-              aria-describedby={describedBy}
-              invalid={invalid}
-              value={draft.date}
-              onChange={(event) => {
-                change("date", event.target.value);
-              }}
-            />
-          )}
-        </Field>
-
-        <Field label="Время" error={errors.time}>
-          {({ id, describedBy, invalid }) => (
-            <Input
-              id={id}
-              type="time"
-              aria-describedby={describedBy}
-              invalid={invalid}
-              value={draft.time}
-              onChange={(event) => {
-                change("time", event.target.value);
-              }}
-            />
-          )}
-        </Field>
-      </div>
+      <WhenFields draft={draft} errors={errors} onChange={change} />
 
       <Field label="Хештеги" hint="Через пробел." error={errors.hashtags}>
         {({ id, describedBy, invalid }) => (
@@ -142,6 +125,14 @@ export function PostEditor({ post, saving, onSave, onCancel }: PostEditorProps) 
         )}
       </Field>
 
+      <PostTools
+        draft={draft}
+        saving={saving}
+        improve={improve}
+        image={image}
+        onApply={setDraft}
+      />
+
       {Object.keys(errors).length > 0 && (
         <Notice tone="error" title="Правка не сохранена">
           Проверьте подсвеченные поля.
@@ -156,6 +147,49 @@ export function PostEditor({ post, saving, onSave, onCancel }: PostEditorProps) 
           Отменить
         </Button>
       </div>
+    </div>
+  );
+}
+
+interface WhenFieldsProps {
+  readonly draft: GeneratedPost;
+  readonly errors: Record<string, string>;
+  readonly onChange: (field: "date" | "time", value: string) => void;
+}
+
+/** Дата и время в одну строку: на телефоне они всё равно встают друг под друга. */
+function WhenFields({ draft, errors, onChange }: WhenFieldsProps) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <Field label="Дата" error={errors.date}>
+        {({ id, describedBy, invalid }) => (
+          <Input
+            id={id}
+            type="date"
+            aria-describedby={describedBy}
+            invalid={invalid}
+            value={draft.date}
+            onChange={(event) => {
+              onChange("date", event.target.value);
+            }}
+          />
+        )}
+      </Field>
+
+      <Field label="Время" error={errors.time}>
+        {({ id, describedBy, invalid }) => (
+          <Input
+            id={id}
+            type="time"
+            aria-describedby={describedBy}
+            invalid={invalid}
+            value={draft.time}
+            onChange={(event) => {
+              onChange("time", event.target.value);
+            }}
+          />
+        )}
+      </Field>
     </div>
   );
 }

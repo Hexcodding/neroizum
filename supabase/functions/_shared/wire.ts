@@ -14,6 +14,8 @@ import type { ResponseContext } from "../../../server/http/respond.ts";
 import {
   createAdminLogStore,
   createAttemptStore,
+  createImageStore,
+  createImprovementStore,
   createLicenseStore,
   createPaymentStore,
   createQuotaStore,
@@ -26,6 +28,10 @@ export interface Wiring {
   readonly licenses: ReturnType<typeof createLicenseStore>;
   readonly attempts: ReturnType<typeof createAttemptStore>;
   readonly quotaStore: ReturnType<typeof createQuotaStore>;
+  /** Счётчик улучшений постов: своя таблица, тот же интерфейс. */
+  readonly improvementStore: ReturnType<typeof createImprovementStore>;
+  /** Счётчик картинок: третья таблица, интерфейс всё тот же. */
+  readonly imageStore: ReturnType<typeof createImageStore>;
   readonly payments: ReturnType<typeof createPaymentStore>;
   readonly adminLog: ReturnType<typeof createAdminLogStore>;
   readonly adminLicenses: ReturnType<typeof createAdminLicenseStore>;
@@ -44,6 +50,8 @@ export function wire(): Wiring {
     licenses: createLicenseStore(config.db),
     attempts: createAttemptStore(config.db),
     quotaStore: createQuotaStore(config.db),
+    improvementStore: createImprovementStore(config.db),
+    imageStore: createImageStore(config.db),
     payments: createPaymentStore(config.db),
     adminLog: createAdminLogStore(config.db),
     adminLicenses: createAdminLicenseStore(config.db),

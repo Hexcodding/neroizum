@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { GeneratedPost } from "../../contracts/index.ts";
+import { INPUT_LIMITS, type GeneratedPost } from "../../contracts/index.ts";
 import { hashSecret } from "../access/keys.ts";
 import { hmacHex } from "../access/hmac.ts";
 import { LIMITS } from "../access/rate-limit.ts";
@@ -15,11 +15,14 @@ import {
   createMemoryAdminLog,
 } from "../admin/__fixtures__/memory-admin-store.ts";
 import { createFakeProvider } from "../generation/__fixtures__/fake-provider.ts";
+import { createFakeImageProvider } from "../generation/__fixtures__/fake-image-provider.ts";
 import { corsHeaders, handlePreflight, isOriginAllowed, parseAllowedOrigins } from "./cors.ts";
 import { clientAddress, errorResponse } from "./respond.ts";
 import { GenerationError } from "../generation/errors.ts";
 import { handleActivate } from "./handlers/activate.ts";
 import { handleGenerate, type PlanToContinue } from "./handlers/generate.ts";
+import { handleImprove } from "./handlers/improve.ts";
+import { handleImage } from "./handlers/image.ts";
 import { handleWebhook } from "./handlers/webhook.ts";
 import { handleAdmin } from "./handlers/admin.ts";
 import { SAMPLE_POST } from "./__fixtures__/sample-post.ts";
@@ -406,6 +409,348 @@ describe("продолжение плана", () => {
     await readEvents(response);
 
     expect(await quotaStore.usedThisMonth("license-1", "2026-03")).toBe(1);
+  });
+});
+
+async function improveDeps() {
+  const licenses = createMemoryLicenseStore();
+  const attempts = createMemoryAttemptStore();
+  const improvements = createMemoryQuotaStore(30);
+  licenses.add(await hashSecret(KEY, PEPPER), makeLicense());
+
+  const session = { licenses, attempts, pepper: PEPPER, nowMs: NOW, today: TODAY };
+  const activation = await handleActivate(post({ key: KEY }), { context: session }, RESPONSE);
+  const { sessionToken } = (await activation.json()) as { sessionToken: string };
+
+  const provider = createFakeProvider();
+  const stored: PlanToContinue = { request: PLAN_REQUEST, posts: storedPosts(3) };
+  const written: { planId: string; post: GeneratedPost }[] = [];
+
+  return {
+    sessionToken,
+    improvements,
+    provider,
+    stored,
+    written,
+    deps: {
+      session,
+      attempts,
+      cascade: { provider, sleep: (): Promise<void> => Promise.resolve() },
+      quota: { store: improvements, today: TODAY },
+      loadPlan: (licenseId: string, planId: string): Promise<PlanToContinue | null> =>
+        Promise.resolve(licenseId === "license-1" && planId === "plan-1" ? stored : null),
+      savePost: (licenseId: string, planId: string, edited: GeneratedPost): Promise<boolean> => {
+        const owned = licenseId === "license-1" && planId === "plan-1";
+        if (owned) written.push({ planId, post: edited });
+        return Promise.resolve(owned);
+      },
+    },
+  };
+}
+
+describe("улучшение поста", () => {
+  const command = { planId: "plan-1", number: 2, instruction: "сделай короче" };
+
+  it("возвращает переделанный пост и сохраняет его тем же путём, что и правка руками", async () => {
+    const { deps, sessionToken, written } = await improveDeps();
+
+    const response = await handleImprove(post(command), sessionToken, deps, RESPONSE);
+    const body = (await response.json()) as { post: GeneratedPost };
+
+    expect(response.status).toBe(200);
+    // Место поста в плане улучшение не меняет: правится текст, а не расписание.
+    expect(body.post.number).toBe(2);
+    expect(body.post.date).toBe("2026-03-17");
+    expect(written).toHaveLength(1);
+    expect(written[0]?.post.number).toBe(2);
+  });
+
+  it("просьба человека уходит в промпт вместе с текущим текстом поста", async () => {
+    const { deps, sessionToken, provider, stored } = await improveDeps();
+
+    await handleImprove(post(command), sessionToken, deps, RESPONSE);
+
+    const prompt = provider.calls[0]?.prompt ?? "";
+    expect(prompt).toContain("сделай короче");
+    expect(prompt).toContain(stored.posts[1]?.postContent ?? "нет текста");
+    // Один слот, а не весь план: улучшается один пост.
+    expect(prompt).not.toContain("| 2026-03-18 ");
+  });
+
+  it("тратит счётчик улучшений, а не генераций планов", async () => {
+    const { deps, sessionToken, improvements } = await improveDeps();
+
+    const response = await handleImprove(post(command), sessionToken, deps, RESPONSE);
+    const body = (await response.json()) as { improvements: { used: number; left: number } };
+
+    expect(await improvements.usedThisMonth("license-1", "2026-03")).toBe(1);
+    expect(body.improvements).toMatchObject({ used: 1, limit: 30, left: 29 });
+  });
+
+  it("сбой модели не стоит человеку улучшения", async () => {
+    const { deps, sessionToken, improvements, written } = await improveDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const broken = {
+      ...deps,
+      cascade: {
+        provider: createFakeProvider([
+          { kind: "fail" as const, error: new GenerationError("INTERNAL", "сбой у провайдера") },
+        ]),
+        sleep: (): Promise<void> => Promise.resolve(),
+      },
+    };
+    const response = await handleImprove(post(command), sessionToken, broken, RESPONSE);
+
+    expect(response.status).toBe(500);
+    expect(written).toHaveLength(0);
+    expect(await improvements.usedThisMonth("license-1", "2026-03")).toBe(0);
+    log.mockRestore();
+  });
+
+  it("исчерпанный счётчик объясняется отдельно от генераций планов", async () => {
+    const { deps, sessionToken, improvements, provider } = await improveDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    for (let taken = 0; taken < 30; taken += 1) {
+      await improvements.reserve("license-1", "2026-03");
+    }
+
+    const response = await handleImprove(post(command), sessionToken, deps, RESPONSE);
+    const body = (await response.json()) as { error: { code: string; message: string } };
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe("IMPROVEMENTS_EXCEEDED");
+    expect(body.error.message).toContain("улучшения");
+    expect(provider.calls).toHaveLength(0);
+    log.mockRestore();
+  });
+
+  it("чужой план не улучшается и модель не вызывает", async () => {
+    const { deps, sessionToken, provider } = await improveDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await handleImprove(
+      post({ ...command, planId: "plan-чужой" }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+
+    expect(response.status).toBe(404);
+    expect(provider.calls).toHaveLength(0);
+    log.mockRestore();
+  });
+
+  it("поста с таким номером в плане нет — это отдельный отказ", async () => {
+    const { deps, sessionToken, provider } = await improveDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await handleImprove(
+      post({ ...command, number: 99 }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe("POST_NOT_FOUND");
+    expect(provider.calls).toHaveLength(0);
+    log.mockRestore();
+  });
+
+  it("пустая просьба отклоняется до обращения к модели", async () => {
+    const { deps, sessionToken, provider, improvements } = await improveDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await handleImprove(
+      post({ ...command, instruction: "   " }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+
+    expect(response.status).toBe(400);
+    expect(provider.calls).toHaveLength(0);
+    expect(await improvements.usedThisMonth("license-1", "2026-03")).toBe(0);
+    log.mockRestore();
+  });
+
+  it("слишком длинная просьба обрезается, а не отклоняется", async () => {
+    const { deps, sessionToken, provider } = await improveDeps();
+    const long = `начало ${"а".repeat(INPUT_LIMITS.instruction * 2)} хвост`;
+
+    const response = await handleImprove(
+      post({ ...command, instruction: long }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+
+    expect(response.status).toBe(200);
+    expect(provider.calls[0]?.prompt).not.toContain("хвост");
+  });
+
+  it("без сессии не улучшает ничего", async () => {
+    const { deps, provider } = await improveDeps();
+
+    const response = await handleImprove(post(command), null, deps, RESPONSE);
+
+    expect(response.status).toBe(401);
+    expect(provider.calls).toHaveLength(0);
+  });
+});
+
+async function imageDeps(provider = createFakeImageProvider()) {
+  const licenses = createMemoryLicenseStore();
+  const attempts = createMemoryAttemptStore();
+  const images = createMemoryQuotaStore(30);
+  licenses.add(await hashSecret(KEY, PEPPER), makeLicense());
+
+  const session = { licenses, attempts, pepper: PEPPER, nowMs: NOW, today: TODAY };
+  const activation = await handleActivate(post({ key: KEY }), { context: session }, RESPONSE);
+  const { sessionToken } = (await activation.json()) as { sessionToken: string };
+
+  const stored: PlanToContinue = { request: PLAN_REQUEST, posts: storedPosts(3) };
+  const saved: { planId: string; number: number; mimeType: string; size: number }[] = [];
+
+  return {
+    sessionToken,
+    images,
+    provider,
+    stored,
+    saved,
+    deps: {
+      session,
+      attempts,
+      provider,
+      quota: { store: images, today: TODAY },
+      loadPlan: (licenseId: string, planId: string): Promise<PlanToContinue | null> =>
+        Promise.resolve(licenseId === "license-1" && planId === "plan-1" ? stored : null),
+      saveImage: (
+        licenseId: string,
+        planId: string,
+        target: GeneratedPost,
+        image: { bytes: Uint8Array; mimeType: string },
+      ): Promise<string | null> => {
+        if (licenseId !== "license-1" || planId !== "plan-1") return Promise.resolve(null);
+        saved.push({
+          planId,
+          number: target.number,
+          mimeType: image.mimeType,
+          size: image.bytes.length,
+        });
+        return Promise.resolve(`https://storage.example/${planId}/${String(target.number)}.png`);
+      },
+    },
+  };
+}
+
+describe("картинка к посту", () => {
+  const command = { planId: "plan-1", number: 2 };
+
+  it("отдаёт ссылку на картинку и сохраняет её у нужного поста", async () => {
+    const { deps, sessionToken, saved } = await imageDeps();
+
+    const response = await handleImage(post(command), sessionToken, deps, RESPONSE);
+    const body = (await response.json()) as { imageUrl: string };
+
+    expect(response.status).toBe(200);
+    expect(body.imageUrl).toContain("https://storage.example/plan-1/2");
+    expect(saved).toEqual([{ planId: "plan-1", number: 2, mimeType: "image/png", size: 4 }]);
+  });
+
+  it("модели уходит промпт из поста без мидджорнейских флагов", async () => {
+    const { deps, sessionToken, provider } = await imageDeps();
+
+    await handleImage(post(command), sessionToken, deps, RESPONSE);
+
+    const call = provider.calls[0];
+    expect(call?.prompt).toContain("sourdough loaf on a wire rack");
+    // «--ar 16:9» Google не понимает и напишет флаг прямо в кадре.
+    expect(call?.prompt).not.toContain("--ar");
+    // Пропорции берутся у площадки и передаются настройкой запроса.
+    expect(call?.aspectRatio).toBe("16:9");
+  });
+
+  it("тратит счётчик картинок, а не генераций и не улучшений", async () => {
+    const { deps, sessionToken, images } = await imageDeps();
+
+    const response = await handleImage(post(command), sessionToken, deps, RESPONSE);
+    const body = (await response.json()) as { images: { used: number; left: number } };
+
+    expect(await images.usedThisMonth("license-1", "2026-03")).toBe(1);
+    expect(body.images).toMatchObject({ used: 1, limit: 30, left: 29 });
+  });
+
+  it("сбой модели не стоит человеку картинки", async () => {
+    const broken = createFakeImageProvider(
+      new GenerationError("PROVIDER_UNAVAILABLE", "рисовалка не отвечает"),
+    );
+    const { deps, sessionToken, images, saved } = await imageDeps(broken);
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await handleImage(post(command), sessionToken, deps, RESPONSE);
+
+    expect(response.status).toBe(503);
+    expect(saved).toHaveLength(0);
+    expect(await images.usedThisMonth("license-1", "2026-03")).toBe(0);
+    log.mockRestore();
+  });
+
+  it("исчерпанный счётчик объясняется отдельно от планов и улучшений", async () => {
+    const { deps, sessionToken, images, provider } = await imageDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    for (let taken = 0; taken < 30; taken += 1) {
+      await images.reserve("license-1", "2026-03");
+    }
+
+    const response = await handleImage(post(command), sessionToken, deps, RESPONSE);
+    const body = (await response.json()) as { error: { code: string; message: string } };
+
+    expect(response.status).toBe(403);
+    expect(body.error.code).toBe("IMAGES_EXCEEDED");
+    expect(body.error.message).toContain("картинки");
+    expect(provider.calls).toHaveLength(0);
+    log.mockRestore();
+  });
+
+  it("к чужому плану картинку не рисует", async () => {
+    const { deps, sessionToken, provider } = await imageDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await handleImage(
+      post({ ...command, planId: "plan-чужой" }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+
+    expect(response.status).toBe(404);
+    expect(provider.calls).toHaveLength(0);
+    log.mockRestore();
+  });
+
+  it("поста с таким номером в плане нет — отказ до модели", async () => {
+    const { deps, sessionToken, provider } = await imageDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await handleImage(post({ ...command, number: 99 }), sessionToken, deps, RESPONSE);
+    const body = (await response.json()) as { error: { code: string } };
+
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe("POST_NOT_FOUND");
+    expect(provider.calls).toHaveLength(0);
+    log.mockRestore();
+  });
+
+  it("без сессии не рисует ничего", async () => {
+    const { deps, provider } = await imageDeps();
+
+    const response = await handleImage(post(command), null, deps, RESPONSE);
+
+    expect(response.status).toBe(401);
+    expect(provider.calls).toHaveLength(0);
   });
 });
 

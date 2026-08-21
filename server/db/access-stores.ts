@@ -23,6 +23,8 @@ interface LicenseRow {
   readonly disabled: boolean;
   readonly subscription_until: string;
   readonly monthly_limit: number;
+  readonly improvement_limit: number;
+  readonly image_limit: number;
 }
 
 interface SessionRow {
@@ -37,10 +39,13 @@ function toLicense(row: LicenseRow): LicenseRecord {
     disabled: row.disabled,
     subscriptionUntil: row.subscription_until,
     monthlyLimit: row.monthly_limit,
+    improvementLimit: row.improvement_limit,
+    imageLimit: row.image_limit,
   };
 }
 
-const LICENSE_FIELDS = "id,client_id,disabled,subscription_until,monthly_limit";
+const LICENSE_FIELDS =
+  "id,client_id,disabled,subscription_until,monthly_limit,improvement_limit,image_limit";
 
 export function createLicenseStore(config: DbConfig): LicenseStore {
   return {
@@ -109,12 +114,21 @@ export function createAttemptStore(config: DbConfig): AttemptStore {
   };
 }
 
-export function createQuotaStore(config: DbConfig): QuotaStore {
+/**
+ * Счётчик по календарному месяцу. Устроены одинаково все три — планы,
+ * улучшения постов и картинки, — различаются только именами функций базы,
+ * поэтому код общий: правка порядка «резерв — подтверждение» не должна
+ * попадать в одно место из трёх.
+ */
+function createRpcQuotaStore(
+  config: DbConfig,
+  kind: "generation" | "improvement" | "image",
+): QuotaStore {
   return {
     async reserve(licenseId: string, monthKey: string): Promise<ReservationResult> {
       // Проверка лимита и вставка резерва — одна функция базы под блокировкой
       // строки лицензии. Иначе два одновременных запроса перебирают лимит.
-      const id = await rpc<string | null>(config, "reserve_generation", {
+      const id = await rpc<string | null>(config, `reserve_${kind}`, {
         p_license_id: licenseId,
         p_month_key: monthKey,
       });
@@ -122,20 +136,32 @@ export function createQuotaStore(config: DbConfig): QuotaStore {
     },
 
     async commit(reservationId: string): Promise<void> {
-      await rpc<null>(config, "commit_generation", { p_reservation_id: reservationId });
+      await rpc<null>(config, `commit_${kind}`, { p_reservation_id: reservationId });
     },
 
     async release(reservationId: string): Promise<void> {
-      await rpc<null>(config, "release_generation", { p_reservation_id: reservationId });
+      await rpc<null>(config, `release_${kind}`, { p_reservation_id: reservationId });
     },
 
     async usedThisMonth(licenseId: string, monthKey: string): Promise<number> {
-      return await rpc<number>(config, "used_generations", {
+      return await rpc<number>(config, `used_${kind}s`, {
         p_license_id: licenseId,
         p_month_key: monthKey,
       });
     },
   };
+}
+
+export function createQuotaStore(config: DbConfig): QuotaStore {
+  return createRpcQuotaStore(config, "generation");
+}
+
+export function createImprovementStore(config: DbConfig): QuotaStore {
+  return createRpcQuotaStore(config, "improvement");
+}
+
+export function createImageStore(config: DbConfig): QuotaStore {
+  return createRpcQuotaStore(config, "image");
 }
 
 export function createPaymentStore(config: DbConfig): PaymentStore {

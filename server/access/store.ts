@@ -13,6 +13,10 @@ export interface LicenseRecord {
   /** Последний день подписки в формате ГГГГ-ММ-ДД. */
   readonly subscriptionUntil: string;
   readonly monthlyLimit: number;
+  /** Улучшений постов в месяц. Считается отдельно от планов: цена другая. */
+  readonly improvementLimit: number;
+  /** Картинок в месяц. Самый дорогой расход: одна картинка дороже всего плана текстом. */
+  readonly imageLimit: number;
 }
 
 export interface SessionRecord {
@@ -59,5 +63,9 @@ export interface AccessStores {
   readonly licenses: LicenseStore;
   readonly attempts: AttemptStore;
   readonly quota: QuotaStore;
+  /** Тот же интерфейс, другая таблица: улучшения постов считаются отдельно. */
+  readonly improvements: QuotaStore;
+  /** И снова тот же интерфейс: картинки считаются третьим счётчиком. */
+  readonly images: QuotaStore;
   readonly adminLog: AdminLogStore;
 }

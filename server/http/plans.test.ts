@@ -61,12 +61,22 @@ async function makeDeps() {
   const { sessionToken } = (await activation.json()) as { sessionToken: string };
   const store = makeStore();
   const quotaStore = createMemoryQuotaStore(20);
+  const improvementStore = createMemoryQuotaStore(30);
+  const imageStore = createMemoryQuotaStore(30);
 
   return {
     sessionToken,
     store,
     quotaStore,
-    deps: { session, store, quota: { store: quotaStore, today: TODAY } },
+    improvementStore,
+    imageStore,
+    deps: {
+      session,
+      store,
+      quota: { store: quotaStore, today: TODAY },
+      improvements: { store: improvementStore, today: TODAY },
+      images: { store: imageStore, today: TODAY },
+    },
   };
 }
 
@@ -182,7 +192,24 @@ describe("мои планы", () => {
 
     expect(await response.json()).toEqual({
       quota: { used: 2, limit: 20, left: 18 },
+      improvements: { used: 0, limit: 30, left: 30 },
+      images: { used: 0, limit: 30, left: 30 },
       subscriptionUntil: "2026-12-31",
+    });
+  });
+
+  it("улучшения и картинки не тратят генерации планов", async () => {
+    const { deps, sessionToken, improvementStore, imageStore } = await makeDeps();
+    await improvementStore.reserve("license-1", "2026-03");
+    await imageStore.reserve("license-1", "2026-03");
+    await imageStore.reserve("license-1", "2026-03");
+
+    const response = await handlePlans(post({ action: "quota" }), sessionToken, deps, RESPONSE);
+
+    expect(await response.json()).toMatchObject({
+      quota: { used: 0, left: 20 },
+      improvements: { used: 1, left: 29 },
+      images: { used: 2, left: 28 },
     });
   });
 

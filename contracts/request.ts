@@ -77,4 +77,6 @@ export const INPUT_LIMITS = {
   styleSample: 900,
   styleSamplesCount: 3,
   previousPostsCount: 40,
+  /** Просьба переделать пост: одна-две фразы, а не второе техзадание. */
+  instruction: 300,
 } as const;

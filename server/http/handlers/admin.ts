@@ -9,6 +9,8 @@ import { adminLogin, verifyAdminToken } from "../../admin/auth.ts";
 import type { AdminAuthConfig } from "../../admin/auth.ts";
 import {
   AdminInputError,
+  changeImageLimit,
+  changeImprovementLimit,
   changeMonthlyLimit,
   changeSubscriptionUntil,
   issueLicense,
@@ -37,6 +39,8 @@ type Action =
   | "issue"
   | "set-disabled"
   | "set-limit"
+  | "set-improvement-limit"
+  | "set-image-limit"
   | "set-subscription"
   | "reset-session";
 
@@ -46,6 +50,8 @@ const ACTIONS: readonly Action[] = [
   "issue",
   "set-disabled",
   "set-limit",
+  "set-improvement-limit",
+  "set-image-limit",
   "set-subscription",
   "reset-session",
 ];
@@ -117,6 +123,29 @@ async function login(
   return denied(response);
 }
 
+/**
+ * Три лимита устроены одинаково и различаются только именем поля и функцией,
+ * которая их меняет. Ветку с проверкой границ и записью в журнал пишет каждая
+ * из них сама — здесь только разбор запроса.
+ */
+async function changeLimit(
+  action: "set-limit" | "set-improvement-limit" | "set-image-limit",
+  body: Record<string, unknown>,
+  deps: AdminHttpDeps,
+): Promise<void> {
+  const licenseId = requireString(body, "licenseId");
+
+  if (action === "set-limit") {
+    await changeMonthlyLimit(licenseId, requireNumber(body, "monthlyLimit"), deps.admin);
+    return;
+  }
+  if (action === "set-improvement-limit") {
+    await changeImprovementLimit(licenseId, requireNumber(body, "improvementLimit"), deps.admin);
+    return;
+  }
+  await changeImageLimit(licenseId, requireNumber(body, "imageLimit"), deps.admin);
+}
+
 async function runAction(
   action: Exclude<Action, "login">,
   body: Record<string, unknown>,
@@ -153,11 +182,9 @@ async function runAction(
       return jsonResponse({ ok: true }, 200, response);
 
     case "set-limit":
-      await changeMonthlyLimit(
-        requireString(body, "licenseId"),
-        requireNumber(body, "monthlyLimit"),
-        deps.admin,
-      );
+    case "set-improvement-limit":
+    case "set-image-limit":
+      await changeLimit(action, body, deps);
       return jsonResponse({ ok: true }, 200, response);
 
     case "set-subscription":

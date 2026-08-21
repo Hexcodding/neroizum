@@ -18,11 +18,21 @@ export function monthKey(isoDate: string): string {
   return isoDate.slice(0, 7);
 }
 
+/**
+ * Счётчиков три, и различаются они только текстом отказа, поэтому код здесь
+ * общий. Раздельны они из-за цены обращения: план стоит четыре-пять обращений
+ * к модели, улучшение поста — одно, а картинка дороже всего текста плана в
+ * несколько раз.
+ */
+export type QuotaKind = "QUOTA_EXCEEDED" | "IMPROVEMENTS_EXCEEDED" | "IMAGES_EXCEEDED";
+
 export interface QuotaContext {
   readonly store: QuotaStore;
   readonly licenseId: string;
   /** Сегодняшняя дата в формате ГГГГ-ММ-ДД. */
   readonly today: string;
+  /** Что сказать при исчерпании. По умолчанию — про генерации планов. */
+  readonly exceeded?: QuotaKind;
 }
 
 /**
@@ -37,7 +47,10 @@ export function createQuotaGuard(context: QuotaContext): QuotaGuard {
     async reserve(): Promise<void> {
       const result = await context.store.reserve(context.licenseId, month);
       if ("reason" in result) {
-        throw new GenerationError("QUOTA_EXCEEDED", `Лимит месяца ${month} исчерпан`);
+        throw new GenerationError(
+          context.exceeded ?? "QUOTA_EXCEEDED",
+          `Лимит месяца ${month} исчерпан`,
+        );
       }
       reservationId = result.id;
     },

@@ -12,9 +12,30 @@ interface AdminLicenseRow {
   readonly disabled: boolean;
   readonly subscription_until: string;
   readonly monthly_limit: number;
+  readonly improvement_limit: number;
+  readonly image_limit: number;
   readonly note: string;
   readonly created_at: string;
   readonly used_this_month: number;
+  readonly improvements_this_month: number;
+  readonly images_this_month: number;
+}
+
+function toSummary(row: AdminLicenseRow): LicenseSummary {
+  return {
+    id: row.id,
+    clientId: row.client_id,
+    disabled: row.disabled,
+    subscriptionUntil: row.subscription_until,
+    monthlyLimit: row.monthly_limit,
+    improvementLimit: row.improvement_limit,
+    imageLimit: row.image_limit,
+    note: row.note,
+    createdAt: row.created_at,
+    usedThisMonth: row.used_this_month,
+    improvementsThisMonth: row.improvements_this_month,
+    imagesThisMonth: row.images_this_month,
+  };
 }
 
 export function createAdminLicenseStore(config: DbConfig): AdminLicenseStore {
@@ -51,16 +72,7 @@ export function createAdminLicenseStore(config: DbConfig): AdminLicenseStore {
       const rows = await rpc<AdminLicenseRow[]>(config, "admin_licenses", {
         p_month_key: monthKey,
       });
-      return rows.map((row) => ({
-        id: row.id,
-        clientId: row.client_id,
-        disabled: row.disabled,
-        subscriptionUntil: row.subscription_until,
-        monthlyLimit: row.monthly_limit,
-        note: row.note,
-        createdAt: row.created_at,
-        usedThisMonth: row.used_this_month,
-      }));
+      return rows.map(toSummary);
     },
 
     async setDisabled(licenseId: string, disabled: boolean): Promise<void> {
@@ -69,6 +81,16 @@ export function createAdminLicenseStore(config: DbConfig): AdminLicenseStore {
 
     async setMonthlyLimit(licenseId: string, monthlyLimit: number): Promise<void> {
       await update(config, "licenses", `id=eq.${licenseId}`, { monthly_limit: monthlyLimit });
+    },
+
+    async setImprovementLimit(licenseId: string, improvementLimit: number): Promise<void> {
+      await update(config, "licenses", `id=eq.${licenseId}`, {
+        improvement_limit: improvementLimit,
+      });
+    },
+
+    async setImageLimit(licenseId: string, imageLimit: number): Promise<void> {
+      await update(config, "licenses", `id=eq.${licenseId}`, { image_limit: imageLimit });
     },
 
     async setSubscriptionUntil(licenseId: string, date: string): Promise<void> {

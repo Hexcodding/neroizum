@@ -18,9 +18,15 @@ export interface LicenseSummary {
   readonly disabled: boolean;
   readonly subscriptionUntil: string;
   readonly monthlyLimit: number;
+  /** Улучшений постов в месяц: свой счётчик, планы на них не тратятся. */
+  readonly improvementLimit: number;
+  /** Картинок в месяц: самый дорогой расход клиента. */
+  readonly imageLimit: number;
   readonly note: string;
   readonly createdAt: string;
   readonly usedThisMonth: number;
+  readonly improvementsThisMonth: number;
+  readonly imagesThisMonth: number;
 }
 
 export interface IssuedLicense {
@@ -73,6 +79,30 @@ export async function adminSetLimit(
   await callFunction<{ ok: boolean }>(
     "admin",
     { action: "set-limit", licenseId, monthlyLimit },
+    { token },
+  );
+}
+
+export async function adminSetImprovementLimit(
+  token: string,
+  licenseId: string,
+  improvementLimit: number,
+): Promise<void> {
+  await callFunction<{ ok: boolean }>(
+    "admin",
+    { action: "set-improvement-limit", licenseId, improvementLimit },
+    { token },
+  );
+}
+
+export async function adminSetImageLimit(
+  token: string,
+  licenseId: string,
+  imageLimit: number,
+): Promise<void> {
+  await callFunction<{ ok: boolean }>(
+    "admin",
+    { action: "set-image-limit", licenseId, imageLimit },
     { token },
   );
 }
