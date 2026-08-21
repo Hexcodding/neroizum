@@ -2,7 +2,7 @@
  * Названные вызовы сервера. Компоненты не собирают тела запросов руками:
  * иначе имя действия вроде "update-post" разъедется между экранами.
  */
-import type { GeneratedPost } from "@contracts";
+import type { GeneratedPost, PeriodDays } from "@contracts";
 import { callFunction, openStream } from "./client";
 import type { Session } from "./session";
 
@@ -105,4 +105,22 @@ export async function openPlanStream(
   signal: AbortSignal,
 ): Promise<ReadableStream<Uint8Array>> {
   return await openStream("generate-plan", request, { token, signal });
+}
+
+/**
+ * Продолжение плана идёт тем же потоком и той же точкой входа. Заявка не
+ * отправляется: сервер берёт её из сохранённого плана, иначе номера постов и
+ * дата старта считались бы от присланного, а не от того, что уже в базе.
+ */
+export async function openContinuationStream(
+  token: string,
+  planId: string,
+  periodDays: PeriodDays,
+  signal: AbortSignal,
+): Promise<ReadableStream<Uint8Array>> {
+  return await openStream(
+    "generate-plan",
+    { continuePlanId: planId, periodDays },
+    { token, signal },
+  );
 }

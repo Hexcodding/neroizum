@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { GeneratedPost } from "../../contracts/index.ts";
 import { hashSecret } from "../access/keys.ts";
+import { SAMPLE_POST } from "./__fixtures__/sample-post.ts";
 import {
   createMemoryAttemptStore,
   createMemoryLicenseStore,
@@ -24,26 +24,6 @@ function post(body: unknown): Request {
     headers: { "content-type": "application/json" },
   });
 }
-
-const SAMPLE_POST: GeneratedPost = {
-  number: 1,
-  date: "2026-03-16",
-  time: "10:00",
-  platform: "telegram",
-  rubric: "Разбор ошибки",
-  format: "Текстовый пост",
-  title: "Почему хлеб черствеет",
-  hook: "Вы убираете хлеб тёплым в пакет.",
-  description: "Разбор ошибки хранения.",
-  script: "",
-  type: "Обучающий",
-  cta: "Расскажите, как храните вы.",
-  hashtags: ["#хлеб"],
-  visual: "Буханка на решётке.",
-  visualStyle: "craft-design",
-  imagePrompt: "sourdough loaf on a wire rack, --ar 16:9",
-  postContent: "Текст поста, готовый к публикации.",
-};
 
 /** Хранилище, которое честно учитывает владельца: план виден только своему. */
 function makeStore(): PlanStore & { readonly updates: unknown[] } {

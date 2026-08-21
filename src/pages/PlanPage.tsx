@@ -1,28 +1,35 @@
 /**
- * Один сохранённый план: посты, календарь, правка, выгрузка.
+ * Один сохранённый план: посты, календарь, правка, выгрузка, продолжение.
  *
  * Правка сохраняется сразу на сервере, без кнопки «сохранить план целиком»:
  * человек правит один пост и уходит, а не редактирует документ.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { GeneratedPost } from "@contracts";
+import type { GeneratedPost, PeriodDays } from "@contracts";
 import { fetchPlan, savePostEdit, type StoredPlan } from "@/shared/api/endpoints";
 import { toApiError } from "@/shared/api/errors";
 import type { ApiError } from "@/shared/api/errors";
 import { useAccess } from "@/features/access/useAccess";
+import { useGeneration } from "@/features/generate-plan/useGeneration";
+import { ContinuePlan } from "@/features/generate-plan/ContinuePlan";
 import { PlanView } from "@/widgets/plan-view/PlanView";
+import { GenerationScreen } from "@/widgets/generation/GenerationScreen";
+import { CONTINUED_PLAN_LABELS } from "@/widgets/generation/labels";
 import { Button } from "@/shared/ui/Button";
 import { Notice, PostSkeleton } from "@/shared/ui/Feedback";
 
 export default function PlanPage() {
   const { planId = "" } = useParams();
-  const { session } = useAccess();
+  const { session, refreshQuota } = useAccess();
   const token = session?.token ?? null;
 
   const [plan, setPlan] = useState<StoredPlan | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
+  /** Не null, пока идёт или показывается продолжение на столько-то дней. */
+  const [extraDays, setExtraDays] = useState<PeriodDays | null>(null);
+  const generation = useGeneration();
 
   const load = useCallback(async (): Promise<void> => {
     if (token === null || planId.length === 0) return;
@@ -37,6 +44,12 @@ export default function PlanPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Продолжение тратит генерацию, поэтому остаток перечитывается, когда работа
+  // закончилась — и после успеха, и после сбоя: при сбое квота возвращается.
+  useEffect(() => {
+    if (!generation.running && extraDays !== null) void refreshQuota();
+  }, [generation.running, extraDays, refreshQuota]);
 
   const savePost = async (post: GeneratedPost): Promise<void> => {
     if (token === null || plan === null) return;
@@ -55,26 +68,20 @@ export default function PlanPage() {
     }
   };
 
+  const continuePlan = (days: PeriodDays): void => {
+    if (token === null || plan === null) return;
+    setExtraDays(days);
+    void generation.continuePlan(token, plan.id, days);
+  };
+
   if (error !== null) {
     return (
-      <div className="flex flex-col gap-4">
-        <Notice
-          tone="error"
-          title="План не открылся"
-          onRetry={
-            error.retryable
-              ? () => {
-                  void load();
-                }
-              : undefined
-          }
-        >
-          {error.message}
-        </Notice>
-        <Button variant="ghost" asChild>
-          <Link to="/plans">Ко всем планам</Link>
-        </Button>
-      </div>
+      <LoadFailure
+        error={error}
+        onRetry={() => {
+          void load();
+        }}
+      />
     );
   }
 
@@ -86,6 +93,40 @@ export default function PlanPage() {
       </div>
     );
   }
+
+  if (extraDays !== null) {
+    return (
+      <GenerationScreen
+        title={plan.title}
+        labels={CONTINUED_PLAN_LABELS}
+        running={generation.running}
+        posts={generation.posts}
+        ready={generation.ready}
+        total={generation.total}
+        warnings={generation.warnings}
+        error={generation.error}
+        onStop={generation.stop}
+        onRetry={() => {
+          continuePlan(extraDays);
+        }}
+        onOpenPlan={
+          generation.running
+            ? null
+            : () => {
+                // План перечитывается целиком: человек ждёт продлённый план, а
+                // не только что дописанный кусок.
+                void load();
+                setExtraDays(null);
+              }
+        }
+        onBackToForm={() => {
+          setExtraDays(null);
+        }}
+      />
+    );
+  }
+
+  const lastDate = plan.posts.reduce((latest, post) => (post.date > latest ? post.date : latest), "");
 
   return (
     <div className="flex flex-col gap-5">
@@ -105,6 +146,23 @@ export default function PlanPage() {
           </Notice>
         )}
       </PlanView>
+
+      {lastDate.length > 0 && (
+        <ContinuePlan lastDate={lastDate} busy={generation.running} onContinue={continuePlan} />
+      )}
+    </div>
+  );
+}
+
+function LoadFailure({ error, onRetry }: { readonly error: ApiError; readonly onRetry: () => void }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <Notice tone="error" title="План не открылся" onRetry={error.retryable ? onRetry : undefined}>
+        {error.message}
+      </Notice>
+      <Button variant="ghost" asChild>
+        <Link to="/plans">Ко всем планам</Link>
+      </Button>
     </div>
   );
 }

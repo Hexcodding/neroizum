@@ -11,10 +11,17 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const openPlanStream = vi.fn();
+const openContinuationStream = vi.fn();
 
 vi.mock("@/shared/api/endpoints", () => ({
   openPlanStream: (token: string, request: unknown, signal?: AbortSignal) =>
     openPlanStream(token, request, signal) as unknown,
+  openContinuationStream: (
+    token: string,
+    planId: string,
+    periodDays: number,
+    signal?: AbortSignal,
+  ) => openContinuationStream(token, planId, periodDays, signal) as unknown,
 }));
 
 const { useGeneration } = await import("./useGeneration");
@@ -143,6 +150,30 @@ describe("генерация плана", () => {
     });
 
     expect(result.current.running).toBe(false);
+  });
+
+  it("продолжение идёт тем же потоком и заявку не пересылает", async () => {
+    openContinuationStream.mockResolvedValue(
+      streamOf([
+        { type: "posts", posts: [POST] },
+        { type: "done", result: { posts: [POST], planId: "plan-1" } },
+      ]),
+    );
+
+    const { result } = renderHook(() => useGeneration());
+
+    await act(async () => {
+      await result.current.continuePlan("token", "plan-1", 14);
+    });
+
+    expect(openContinuationStream).toHaveBeenCalledWith(
+      "token",
+      "plan-1",
+      14,
+      expect.any(AbortSignal),
+    );
+    expect(result.current.planId).toBe("plan-1");
+    expect(result.current.error).toBeNull();
   });
 
   it("обрыв связи объясняется человеческим языком", async () => {

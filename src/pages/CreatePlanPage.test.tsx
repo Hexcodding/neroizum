@@ -16,6 +16,7 @@ vi.mock("@/shared/api/endpoints", () => ({
   logout: vi.fn(),
   fetchQuota: (token: string) => fetchQuota(token) as unknown,
   openPlanStream: vi.fn(),
+  openContinuationStream: vi.fn(),
 }));
 
 const { AccessProvider } = await import("@/features/access/AccessProvider");

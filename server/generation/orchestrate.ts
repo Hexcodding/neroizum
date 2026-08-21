@@ -23,6 +23,7 @@ import {
 import { buildPrompt, PROMPT_VERSION } from "../prompt/index.ts";
 import { PLAN_RESPONSE_SCHEMA } from "../prompt/core/output-contract.ts";
 import { CONTENT_MIX_BY_GOAL, expectedTypeCounts } from "../prompt/blocks/funnel.ts";
+import type { ContinuationOffsets } from "./continuation.ts";
 import { GenerationError, toGenerationError } from "./errors.ts";
 import { callWithCascade, type CascadeOptions } from "./provider/cascade.ts";
 import { parsePlanResponse } from "./parse.ts";
@@ -65,6 +66,12 @@ export interface OrchestrateOptions {
   readonly signal?: AbortSignal;
   readonly onProgress?: (event: ProgressEvent) => void;
   readonly quota?: QuotaGuard;
+  /**
+   * Продолжение сохранённого плана. Без него нумерация считается по длине
+   * предыстории в запросе, а при продолжении она обрезана до последних постов —
+   * и номера пошли бы по второму кругу.
+   */
+  readonly continuation?: ContinuationOffsets;
 }
 
 export interface GenerationResult {
@@ -217,14 +224,22 @@ async function runBatches(
   }
 }
 
-function scheduleFor(request: GenerationRequest): ScheduleSlot[] {
+function scheduleFor(
+  request: GenerationRequest,
+  continuation: ContinuationOffsets | undefined,
+): ScheduleSlot[] {
+  const offsets = continuation ?? {
+    startNumber: request.previousPosts.length + 1,
+    platformOffset: request.previousPosts.length,
+  };
+
   return buildSchedule({
     startDate: request.startDate,
     periodDays: request.periodDays,
     postsPerWeek: request.postsPerWeek,
     platforms: request.platforms,
-    startNumber: request.previousPosts.length + 1,
-    platformOffset: request.previousPosts.length,
+    startNumber: offsets.startNumber,
+    platformOffset: offsets.platformOffset,
   });
 }
 
@@ -238,7 +253,7 @@ export async function generatePlan(
   }
 
   const request = rawRequest as GenerationRequest;
-  const slots = scheduleFor(request);
+  const slots = scheduleFor(request, options.continuation);
   const state: RunState = { posts: [], rescuedBatches: 0, stopped: false };
 
   await options.quota?.reserve();

@@ -19,6 +19,18 @@ export interface SavePlanInput {
   readonly title: string;
 }
 
+/** Строка поста. Одна на сохранение и на дозапись: разъехавшись, они дали бы
+ * посты продолжения без даты или без площадки. */
+function postRow(planId: string, post: GeneratedPost): Record<string, unknown> {
+  return {
+    plan_id: planId,
+    number: post.number,
+    publish_date: post.date,
+    platform: post.platform,
+    payload: post,
+  };
+}
+
 export async function savePlan(config: DbConfig, input: SavePlanInput): Promise<string> {
   const plan = await insert<{ id: string }>(
     config,
@@ -39,16 +51,38 @@ export async function savePlan(config: DbConfig, input: SavePlanInput): Promise<
   await insertMany(
     config,
     "posts",
-    input.posts.map((post) => ({
-      plan_id: plan.id,
-      number: post.number,
-      publish_date: post.date,
-      platform: post.platform,
-      payload: post,
-    })),
+    input.posts.map((post) => postRow(plan.id, post)),
   );
 
   return plan.id;
+}
+
+/**
+ * Дозапись постов в существующий план — продолжение следующим периодом.
+ *
+ * План становится длиннее, а не раздваивается: человек ждёт, что его план
+ * продлился, а не что у него появился «план 2». Возвращает false, если план
+ * принадлежит другому клиенту или уже удалён.
+ */
+export async function appendPosts(
+  config: DbConfig,
+  licenseId: string,
+  planId: string,
+  posts: readonly GeneratedPost[],
+): Promise<boolean> {
+  const owned = await selectOne<{ id: string }>(
+    config,
+    "content_plans",
+    `id=eq.${planId}&license_id=eq.${licenseId}&select=id`,
+  );
+  if (owned === null) return false;
+
+  await insertMany(
+    config,
+    "posts",
+    posts.map((post) => postRow(planId, post)),
+  );
+  return true;
 }
 
 export interface PlanSummary {

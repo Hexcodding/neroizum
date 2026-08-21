@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/Button";
 import { Notice, PostSkeleton, Progress } from "@/shared/ui/Feedback";
 import { PlanView } from "@/widgets/plan-view/PlanView";
 import type { ApiError } from "@/shared/api/errors";
+import type { GenerationLabels } from "./labels";
 
 export interface GenerationScreenProps {
   readonly title: string;
@@ -19,6 +20,8 @@ export interface GenerationScreenProps {
   readonly total: number;
   readonly warnings: readonly string[];
   readonly error: ApiError | null;
+  /** Подписи задаются вызывающим: новый план и продолжение звучат по-разному. */
+  readonly labels: GenerationLabels;
   readonly onStop: () => void;
   readonly onRetry: () => void;
   readonly onOpenPlan: (() => void) | null;
@@ -53,7 +56,7 @@ export function GenerationScreen(props: GenerationScreenProps) {
 
       {nothingHappened && (
         <Button variant="ghost" onClick={props.onBackToForm}>
-          Вернуться к заявке
+          {props.labels.back}
         </Button>
       )}
     </div>
@@ -65,11 +68,12 @@ function Head({
   finished,
   onStop,
   onOpenPlan,
+  labels,
 }: GenerationScreenProps & { readonly finished: boolean }) {
   return (
     <header className="flex flex-wrap items-center gap-3">
       <h1 className="text-xl font-semibold tracking-tight">
-        {finished ? "План готов" : "Собираем план"}
+        {finished ? labels.finished : labels.running}
       </h1>
 
       {running && (
@@ -79,7 +83,7 @@ function Head({
       )}
       {finished && onOpenPlan !== null && (
         <Button size="sm" className="ml-auto" onClick={onOpenPlan}>
-          Открыть и править
+          {labels.openPlan}
         </Button>
       )}
     </header>

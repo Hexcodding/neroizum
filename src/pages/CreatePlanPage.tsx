@@ -12,6 +12,7 @@ import { PlanForm } from "@/features/plan-form/PlanForm";
 import { useGeneration } from "@/features/generate-plan/useGeneration";
 import { useAccess } from "@/features/access/useAccess";
 import { GenerationScreen } from "@/widgets/generation/GenerationScreen";
+import { NEW_PLAN_LABELS } from "@/widgets/generation/labels";
 import { Intro } from "@/features/onboarding/Intro";
 import { markIntroSeen, wasIntroSeen } from "@/features/onboarding/intro-state";
 import { Notice } from "@/shared/ui/Feedback";
@@ -81,6 +82,7 @@ export default function CreatePlanPage() {
   return (
     <GenerationScreen
       title={request.niche}
+      labels={NEW_PLAN_LABELS}
       running={generation.running}
       posts={generation.posts}
       ready={generation.ready}

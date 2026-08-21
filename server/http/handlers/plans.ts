@@ -12,7 +12,7 @@ import { readQuotaStatus } from "../../access/quota.ts";
 import type { QuotaContext } from "../../access/quota.ts";
 import type { LicenseRecord } from "../../access/store.ts";
 import { GenerationError } from "../../generation/errors.ts";
-import { errorResponse, jsonResponse, readJson } from "../respond.ts";
+import { errorPayload, errorResponse, jsonResponse, readJson } from "../respond.ts";
 import type { ResponseContext } from "../respond.ts";
 
 export interface PlanStore {
@@ -41,12 +41,9 @@ function isAction(value: unknown): value is Action {
   return typeof value === "string" && (ACTIONS as readonly string[]).includes(value);
 }
 
-const NOT_FOUND = {
-  code: "PLAN_NOT_FOUND",
-  message: "Такого плана нет. Возможно, он удалён — откройте список планов заново.",
-  retryable: false,
-  fields: [],
-} as const;
+// Текст берётся из общего справочника ошибок: тот же отказ приходит и при
+// попытке продлить чужой план, и звучать он обязан одинаково.
+const NOT_FOUND = errorPayload(new GenerationError("PLAN_NOT_FOUND", "план не найден"));
 
 function planId(body: Record<string, unknown>): string {
   const value = body.planId;
@@ -113,7 +110,7 @@ async function runAction(
 
     case "get": {
       const plan = await deps.store.load(licenseId, planId(body));
-      if (plan === null) return jsonResponse({ error: NOT_FOUND }, 404, response);
+      if (plan === null) return jsonResponse(NOT_FOUND, 404, response);
       return jsonResponse({ plan }, 200, response);
     }
 
@@ -127,13 +124,13 @@ async function runAction(
         planId(body),
         body.post as GeneratedPost,
       );
-      if (!updated) return jsonResponse({ error: NOT_FOUND }, 404, response);
+      if (!updated) return jsonResponse(NOT_FOUND, 404, response);
       return jsonResponse({ ok: true }, 200, response);
     }
 
     case "delete": {
       const removed = await deps.store.remove(licenseId, planId(body));
-      if (!removed) return jsonResponse({ error: NOT_FOUND }, 404, response);
+      if (!removed) return jsonResponse(NOT_FOUND, 404, response);
       return jsonResponse({ ok: true }, 200, response);
     }
   }

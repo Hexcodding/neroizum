@@ -6,8 +6,8 @@
  * экране и уже сохранено на сервере.
  */
 import { useCallback, useRef, useState } from "react";
-import type { GeneratedPost } from "@contracts";
-import { openPlanStream } from "@/shared/api/endpoints";
+import type { GeneratedPost, PeriodDays } from "@contracts";
+import { openContinuationStream, openPlanStream } from "@/shared/api/endpoints";
 import { readEvents } from "@/shared/api/stream";
 import { toApiError } from "@/shared/api/errors";
 import type { ApiError } from "@/shared/api/errors";
@@ -21,8 +21,12 @@ export interface GenerationState {
   readonly warnings: readonly string[];
   readonly error: ApiError | null;
   start(token: string, request: unknown): Promise<void>;
+  /** Дописать к сохранённому плану ещё один период тем же потоком событий. */
+  continuePlan(token: string, planId: string, periodDays: PeriodDays): Promise<void>;
   stop(): void;
 }
+
+type OpenStream = (signal: AbortSignal) => Promise<ReadableStream<Uint8Array>>;
 
 interface DoneEvent {
   readonly planId?: unknown;
@@ -47,7 +51,7 @@ export function useGeneration(): GenerationState {
     setRunning(false);
   }, []);
 
-  const start = useCallback(async (token: string, request: unknown): Promise<void> => {
+  const run = useCallback(async (open: OpenStream): Promise<void> => {
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -59,7 +63,7 @@ export function useGeneration(): GenerationState {
     setError(null);
 
     try {
-      const stream = await openPlanStream(token, request, controller.signal);
+      const stream = await open(controller.signal);
 
       for await (const event of readEvents(stream)) {
         applyEvent(event, { setPosts, setReady, setTotal, setPlanId, setWarnings, setError });
@@ -74,7 +78,21 @@ export function useGeneration(): GenerationState {
     }
   }, []);
 
-  return { running, posts, ready, total, planId, warnings, error, start, stop };
+  const start = useCallback(
+    async (token: string, request: unknown): Promise<void> => {
+      await run((signal) => openPlanStream(token, request, signal));
+    },
+    [run],
+  );
+
+  const continuePlan = useCallback(
+    async (token: string, planId: string, periodDays: PeriodDays): Promise<void> => {
+      await run((signal) => openContinuationStream(token, planId, periodDays, signal));
+    },
+    [run],
+  );
+
+  return { running, posts, ready, total, planId, warnings, error, start, continuePlan, stop };
 }
 
 interface Setters {

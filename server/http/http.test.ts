@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { GeneratedPost } from "../../contracts/index.ts";
 import { hashSecret } from "../access/keys.ts";
 import { hmacHex } from "../access/hmac.ts";
 import { LIMITS } from "../access/rate-limit.ts";
@@ -18,9 +19,10 @@ import { corsHeaders, handlePreflight, isOriginAllowed, parseAllowedOrigins } fr
 import { clientAddress, errorResponse } from "./respond.ts";
 import { GenerationError } from "../generation/errors.ts";
 import { handleActivate } from "./handlers/activate.ts";
-import { handleGenerate } from "./handlers/generate.ts";
+import { handleGenerate, type PlanToContinue } from "./handlers/generate.ts";
 import { handleWebhook } from "./handlers/webhook.ts";
 import { handleAdmin } from "./handlers/admin.ts";
+import { SAMPLE_POST } from "./__fixtures__/sample-post.ts";
 
 const PEPPER = "тестовый-секрет";
 const KEY = "NZM-A2B3-C4D5-E6F7";
@@ -200,6 +202,15 @@ const PLAN_REQUEST = {
   },
 };
 
+/** План, который уже лежит в базе и который можно продлить. */
+function storedPosts(count: number): GeneratedPost[] {
+  return Array.from({ length: count }, (_unused, index) => ({
+    ...SAMPLE_POST,
+    number: index + 1,
+    date: `2026-03-${String(16 + index).padStart(2, "0")}`,
+  }));
+}
+
 async function generateDeps() {
   const licenses = createMemoryLicenseStore();
   const attempts = createMemoryAttemptStore();
@@ -212,11 +223,15 @@ async function generateDeps() {
   const { sessionToken } = (await activation.json()) as { sessionToken: string };
 
   const saved: { licenseId: string }[] = [];
+  const appended: { planId: string; posts: readonly GeneratedPost[] }[] = [];
+  const stored: PlanToContinue = { request: PLAN_REQUEST, posts: storedPosts(3) };
 
   return {
     sessionToken,
     quotaStore,
     saved,
+    appended,
+    stored,
     deps: {
       session,
       attempts,
@@ -225,6 +240,12 @@ async function generateDeps() {
       savePlan: (licenseId: string): Promise<string> => {
         saved.push({ licenseId });
         return Promise.resolve("plan-1");
+      },
+      loadPlan: (licenseId: string, planId: string): Promise<PlanToContinue | null> =>
+        Promise.resolve(licenseId === "license-1" && planId === "plan-1" ? stored : null),
+      appendPosts: (_licenseId: string, planId: string, result: unknown): Promise<void> => {
+        appended.push({ planId, posts: (result as { posts: readonly GeneratedPost[] }).posts });
+        return Promise.resolve();
       },
     },
   };
@@ -301,6 +322,90 @@ describe("генерация плана", () => {
     expect(events.at(-1)).toMatchObject({ type: "error" });
     expect(await quotaStore.usedThisMonth("license-1", "2026-03")).toBe(0);
     log.mockRestore();
+  });
+});
+
+describe("продолжение плана", () => {
+  it("дописывает посты в тот же план, а не создаёт второй", async () => {
+    const { deps, sessionToken, saved, appended } = await generateDeps();
+
+    const response = await handleGenerate(
+      post({ continuePlanId: "plan-1", periodDays: 7 }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+    await readEvents(response);
+
+    expect(saved).toHaveLength(0);
+    expect(appended).toHaveLength(1);
+    expect(appended[0]?.planId).toBe("plan-1");
+  });
+
+  it("нумерация и даты продолжаются с конца плана", async () => {
+    const { deps, sessionToken, appended, stored } = await generateDeps();
+
+    const response = await handleGenerate(
+      post({ continuePlanId: "plan-1", periodDays: 7 }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+    await readEvents(response);
+
+    const fresh = appended[0]?.posts ?? [];
+    const lastOld = stored.posts.at(-1);
+    expect(fresh[0]?.number).toBe((lastOld?.number ?? 0) + 1);
+    expect(fresh[0]?.date).toBe("2026-03-19");
+    // Номера не идут по второму кругу: пересечения со старым планом нет.
+    const oldNumbers = new Set(stored.posts.map((item) => item.number));
+    expect(fresh.some((item) => oldNumbers.has(item.number))).toBe(false);
+  });
+
+  it("продолжение чужого плана не находится и модель не вызывает", async () => {
+    const { deps, sessionToken, appended } = await generateDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await handleGenerate(
+      post({ continuePlanId: "plan-чужой", periodDays: 7 }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+
+    expect(response.status).toBe(404);
+    expect(appended).toHaveLength(0);
+    log.mockRestore();
+  });
+
+  it("нелепый период продолжения отклоняется до модели", async () => {
+    const { deps, sessionToken, appended } = await generateDeps();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await handleGenerate(
+      post({ continuePlanId: "plan-1", periodDays: 365 }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+
+    expect(response.status).toBe(400);
+    expect(appended).toHaveLength(0);
+    log.mockRestore();
+  });
+
+  it("продолжение стоит одну генерацию, как и новый план", async () => {
+    const { deps, sessionToken, quotaStore } = await generateDeps();
+
+    const response = await handleGenerate(
+      post({ continuePlanId: "plan-1", periodDays: 7 }),
+      sessionToken,
+      deps,
+      RESPONSE,
+    );
+    await readEvents(response);
+
+    expect(await quotaStore.usedThisMonth("license-1", "2026-03")).toBe(1);
   });
 });
 

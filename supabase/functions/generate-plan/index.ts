@@ -2,7 +2,9 @@
 // ответ уходят только посты.
 import { createGeminiProvider } from "../../../server/generation/provider/gemini.ts";
 import { handleGenerate } from "../../../server/http/handlers/generate.ts";
-import { savePlan } from "../../../server/db/plans.ts";
+import type { PlanToContinue } from "../../../server/http/handlers/generate.ts";
+import { appendPosts, loadPlan, savePlan } from "../../../server/db/plans.ts";
+import { GenerationError } from "../../../server/generation/errors.ts";
 import type { GenerationResult } from "../../../server/generation/orchestrate.ts";
 import { begin, bearer, wire } from "../_shared/wire.ts";
 
@@ -39,6 +41,19 @@ Deno.serve(async (request: Request): Promise<Response> => {
         posts: plan.posts,
         title: planTitle(planRequest),
       });
+    },
+    loadPlan: async (licenseId: string, planId: string): Promise<PlanToContinue | null> => {
+      const plan = await loadPlan(context.config.db, licenseId, planId);
+      return plan === null ? null : { request: plan.request, posts: plan.posts };
+    },
+    appendPosts: async (licenseId: string, planId: string, result: unknown): Promise<void> => {
+      const plan = result as GenerationResult;
+      const appended = await appendPosts(context.config.db, licenseId, planId, plan.posts);
+      // План удалили, пока шла генерация: писать посты некуда, и молчать об
+      // этом нельзя — человек ждёт, что план стал длиннее.
+      if (!appended) {
+        throw new GenerationError("PLAN_NOT_FOUND", "план исчез во время продолжения");
+      }
     },
   }, response);
 });

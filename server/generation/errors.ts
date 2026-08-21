@@ -17,6 +17,7 @@ export type GenerationErrorCode =
   | "BAD_RESPONSE"
   | "STOPPED_BY_USER"
   | "QUOTA_EXCEEDED"
+  | "PLAN_NOT_FOUND"
   | "INTERNAL";
 
 interface ErrorPresentation {
@@ -66,6 +67,11 @@ const PRESENTATION: Readonly<Record<GenerationErrorCode, ErrorPresentation>> = {
       "На этот месяц генерации закончились. Лимит обновится в начале следующего месяца — или напишите нам, чтобы увеличить его.",
     retryable: false,
     httpStatus: 403,
+  },
+  PLAN_NOT_FOUND: {
+    userMessage: "Такого плана нет. Возможно, он удалён — откройте список планов заново.",
+    retryable: false,
+    httpStatus: 404,
   },
   INTERNAL: {
     userMessage:

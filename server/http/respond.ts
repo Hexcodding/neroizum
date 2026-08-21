@@ -30,6 +30,29 @@ export function jsonResponse(
   });
 }
 
+export interface ErrorPayload {
+  readonly code: string;
+  readonly message: string;
+  readonly retryable: boolean;
+  readonly fields: readonly { field: string; message: string }[];
+}
+
+/**
+ * Что клиент видит вместо ошибки. Собирается в одном месте: и обычный ответ, и
+ * событие в потоке генерации обязаны выглядеть одинаково, иначе интерфейсу
+ * пришлось бы разбирать два формата отказа.
+ */
+export function errorPayload(error: GenerationError): { readonly error: ErrorPayload } {
+  return {
+    error: {
+      code: error.code,
+      message: error.userMessage,
+      retryable: error.retryable,
+      fields: error.fields,
+    },
+  };
+}
+
 /**
  * Ошибка для клиента. Техническая причина уходит в лог сервера, наружу — код,
  * человеческий текст и признак «есть ли смысл повторять».
@@ -41,14 +64,7 @@ export function errorResponse(cause: unknown, context: ResponseContext): Respons
   console.error(`[${error.code}] ${error.message}`);
 
   return jsonResponse(
-    {
-      error: {
-        code: error.code,
-        message: error.userMessage,
-        retryable: error.retryable,
-        fields: error.fields,
-      },
-    },
+    errorPayload(error),
     // Остановку по кнопке пользователя нельзя отдавать как успех запроса.
     error.httpStatus === 200 ? 499 : error.httpStatus,
     context,
