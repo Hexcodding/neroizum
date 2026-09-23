@@ -5,7 +5,11 @@
   // а не силой воли разработчика.
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    // DOM здесь не для браузера, а ради fetch, AbortController и таймеров:
+    // они есть в Deno, но описаны именно в этой библиотеке типов. Браузерные
+    // объекты вроде document и window запрещены правилом линтера
+    // no-restricted-globals — см. eslint/layer-boundaries.js.
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
@@ -13,6 +17,12 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
+    // Импорты пишутся с расширением .ts, потому что этот код выполняет Deno, а
+    // он не угадывает расширения. Заодно исчезает необходимость в псевдонимах:
+    // путь в исходнике и путь на диске совпадают.
+    "allowImportingTsExtensions": true,
+    // Нужно тесту, который сверяет список фраз защиты бандла с промптом.
+    "resolveJsonModule": true,
 
     "strict": true,
     "noImplicitAny": true,
@@ -22,7 +32,14 @@
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
 
+    // Псевдонима @contracts здесь намеренно нет: Deno о нём не знает, а
+    // отсутствие записи означает, что случайное использование сразу упадёт
+    // при проверке типов, а не при развёртывании.
+    // Типов Node здесь нет намеренно: серверный код исполняет Deno, и случайное
+    // обращение к Node API должно падать при проверке типов, а не в бою.
     "types": []
   },
-  "include": ["server"]
+  // Точки входа Supabase проверяются вместе с сервером: иначе ошибка в них
+  // обнаружится только при развёртывании.
+  "include": ["server", "supabase/functions"]
 }

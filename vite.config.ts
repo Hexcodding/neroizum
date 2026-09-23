@@ -22,15 +22,37 @@ function resolveChunk(moduleId: string): string | undefined {
   return "vendor";
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // Признак админской сборки задаётся режимом, а не файлом окружения: файл
+  // окружения легко забыть на боевом сервере и выложить панель управления
+  // вместе с приложением для клиентов. Режим виден прямо в команде сборки.
+  //
+  // В разработке панель доступна всегда — иначе её не проверить локально.
+  // Значение подставляется строкой, поэтому в клиентской сборке ветка с
+  // загрузкой панели становится недостижимой и её код в бандл не входит.
+  define: {
+    "import.meta.env.VITE_ADMIN": JSON.stringify(
+      mode === "admin" || mode === "development" ? "on" : "",
+    ),
+  },
   server: {
+    // Адрес указан числом, а не словом localhost. Слово система разворачивает
+    // по своему усмотрению, и на Windows это обычно IPv6-адрес ::1 — тогда
+    // сервер слушает его, а браузер стучится на 127.0.0.1 и получает «страница
+    // не найдена» при полностью работающем Vite.
+    host: "127.0.0.1",
     port: 8080,
     strictPort: false,
+  },
+  preview: {
+    host: "127.0.0.1",
+    port: 4173,
   },
   plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
+      "@contracts": path.resolve(import.meta.dirname, "./contracts"),
     },
   },
   build: {
@@ -44,4 +66,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

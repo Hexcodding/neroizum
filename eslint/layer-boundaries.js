@@ -75,9 +75,29 @@ function clientLayerConfig(layer, index) {
   };
 }
 
-/** Серверный слой: без фреймворка и без знания о клиенте. */
+/**
+ * Браузерные глобальные объекты. Серверу доступны библиотеки типов с fetch и
+ * таймерами — без них не сделать вызов AI-провайдера, — но вместе с ними
+ * приходят document и window. Раньше от них защищала конфигурация типов без
+ * библиотеки DOM; теперь защищает этот список.
+ */
+const BROWSER_GLOBALS = [
+  "document",
+  "window",
+  "localStorage",
+  "sessionStorage",
+  "navigator",
+  "alert",
+  "location",
+  "history",
+];
+
+/**
+ * Серверный слой: без фреймворка, без клиента и без браузера. Точки входа
+ * Supabase живут в другой папке, но это тот же слой и те же запреты.
+ */
 const serverConfig = {
-  files: ["server/**/*.ts"],
+  files: ["server/**/*.ts", "supabase/functions/**/*.ts"],
   rules: {
     "no-restricted-imports": [
       "error",
@@ -91,7 +111,41 @@ const serverConfig = {
         ],
       },
     ],
+    "no-restricted-globals": [
+      "error",
+      ...BROWSER_GLOBALS.map((name) => ({
+        name,
+        message: `${name} не существует на сервере: код выполняется в Deno, а не в браузере.`,
+      })),
+    ],
   },
 };
 
-export const layerBoundaries = [...LAYERS.map(clientLayerConfig), serverConfig];
+/**
+ * Общий словарь: его импортируют обе стороны, поэтому сам он не должен знать
+ * ни про интерфейс, ни про сервер. Иначе через него протечёт любая зависимость.
+ */
+const contractsConfig = {
+  files: ["contracts/**/*.ts"],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: FRAMEWORK_PATHS,
+        patterns: [
+          {
+            group: ["@/**", "**/src/**", "**/server/**"],
+            message:
+              "contracts/ импортируют обе стороны, поэтому он не зависит ни от интерфейса, ни от сервера. Иначе зависимость протечёт через него.",
+          },
+        ],
+      },
+    ],
+  },
+};
+
+export const layerBoundaries = [
+  ...LAYERS.map(clientLayerConfig),
+  serverConfig,
+  contractsConfig,
+];

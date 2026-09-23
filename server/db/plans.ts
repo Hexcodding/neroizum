@@ -1,0 +1,255 @@
+/**
+ * Сохранение готового плана.
+ *
+ * План пишется вместе с версией промпта: без неё через месяц не ответить,
+ * каким заданием сделан результат и стало ли лучше после правки промпта.
+ *
+ * Посты сохраняются одной пачкой. Если план оборвался и постов меньше
+ * задуманного — сохраняются те, что есть: терять готовую работу нельзя.
+ */
+import type { GeneratedPost } from "../../contracts/index.ts";
+import { insert, insertMany, remove, select, selectOne, update, type DbConfig } from "./rest.ts";
+
+export interface SavePlanInput {
+  readonly licenseId: string;
+  readonly request: unknown;
+  readonly promptVersion: string;
+  readonly posts: readonly GeneratedPost[];
+  /** Заголовок для списка планов. Составляется на стороне вызова. */
+  readonly title: string;
+}
+
+/** Строка поста. Одна на сохранение и на дозапись: разъехавшись, они дали бы
+ * посты продолжения без даты или без площадки. */
+function postRow(planId: string, post: GeneratedPost): Record<string, unknown> {
+  return {
+    plan_id: planId,
+    number: post.number,
+    publish_date: post.date,
+    platform: post.platform,
+    payload: post,
+  };
+}
+
+export async function savePlan(config: DbConfig, input: SavePlanInput): Promise<string> {
+  const plan = await insert<{ id: string }>(
+    config,
+    "content_plans",
+    {
+      license_id: input.licenseId,
+      title: input.title.slice(0, 120),
+      prompt_version: input.promptVersion,
+      request: input.request,
+    },
+    { returning: true },
+  );
+
+  if (plan === null) {
+    throw new Error("План не сохранился: база не вернула строку");
+  }
+
+  await insertMany(
+    config,
+    "posts",
+    input.posts.map((post) => postRow(plan.id, post)),
+  );
+
+  return plan.id;
+}
+
+/**
+ * Дозапись постов в существующий план — продолжение следующим периодом.
+ *
+ * План становится длиннее, а не раздваивается: человек ждёт, что его план
+ * продлился, а не что у него появился «план 2». Возвращает false, если план
+ * принадлежит другому клиенту или уже удалён.
+ */
+export async function appendPosts(
+  config: DbConfig,
+  licenseId: string,
+  planId: string,
+  posts: readonly GeneratedPost[],
+): Promise<boolean> {
+  const owned = await selectOne<{ id: string }>(
+    config,
+    "content_plans",
+    `id=eq.${planId}&license_id=eq.${licenseId}&select=id`,
+  );
+  if (owned === null) return false;
+
+  await insertMany(
+    config,
+    "posts",
+    posts.map((post) => postRow(planId, post)),
+  );
+  return true;
+}
+
+export interface PlanSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly createdAt: string;
+  readonly postCount: number;
+  /** Первая и последняя даты плана: по ним видно, какой период он покрывает. */
+  readonly firstDate: string;
+  readonly lastDate: string;
+}
+
+interface PlanRow {
+  readonly id: string;
+  readonly title: string;
+  readonly created_at: string;
+  readonly posts: { readonly publish_date: string }[];
+}
+
+/**
+ * Список планов клиента. Даты и число постов берутся вложенной выборкой, чтобы
+ * не делать отдельный запрос на каждый план.
+ */
+export async function listPlans(
+  config: DbConfig,
+  licenseId: string,
+): Promise<readonly PlanSummary[]> {
+  const rows = await select<PlanRow>(
+    config,
+    "content_plans",
+    `license_id=eq.${licenseId}&select=id,title,created_at,posts(publish_date)&order=created_at.desc`,
+  );
+
+  return rows.map((row) => {
+    const dates = row.posts.map((post) => post.publish_date).sort();
+    return {
+      id: row.id,
+      title: row.title,
+      createdAt: row.created_at,
+      postCount: row.posts.length,
+      firstDate: dates[0] ?? "",
+      lastDate: dates.at(-1) ?? "",
+    };
+  });
+}
+
+export interface StoredPlan {
+  readonly id: string;
+  readonly title: string;
+  readonly createdAt: string;
+  readonly promptVersion: string;
+  readonly request: unknown;
+  readonly posts: readonly GeneratedPost[];
+  /**
+   * Пути картинок в хранилище: номер поста → путь. Отдельно от постов, потому
+   * что картинка живёт не в payload — payload перезаписывается целиком при
+   * правке и при переделке поста, и картинка исчезала бы вместе с ним.
+   */
+  readonly imagePaths: Readonly<Record<number, string>>;
+}
+
+interface FullPlanRow {
+  readonly id: string;
+  readonly title: string;
+  readonly created_at: string;
+  readonly prompt_version: string;
+  readonly request: unknown;
+  readonly posts: {
+    readonly number: number;
+    readonly payload: GeneratedPost;
+    readonly image_path: string | null;
+  }[];
+}
+
+/**
+ * План целиком. Проверка владельца входит в условие запроса, а не делается
+ * отдельно после выборки: план чужого клиента просто не найдётся.
+ */
+export async function loadPlan(
+  config: DbConfig,
+  licenseId: string,
+  planId: string,
+): Promise<StoredPlan | null> {
+  const row = await selectOne<FullPlanRow>(
+    config,
+    "content_plans",
+    `id=eq.${planId}&license_id=eq.${licenseId}&select=id,title,created_at,prompt_version,request,posts(number,payload,image_path)`,
+  );
+  if (row === null) return null;
+
+  const imagePaths: Record<number, string> = {};
+  for (const post of row.posts) {
+    if (post.image_path !== null) imagePaths[post.number] = post.image_path;
+  }
+
+  return {
+    id: row.id,
+    title: row.title,
+    createdAt: row.created_at,
+    promptVersion: row.prompt_version,
+    request: row.request,
+    posts: [...row.posts].sort((left, right) => left.number - right.number).map((post) => post.payload),
+    imagePaths,
+  };
+}
+
+/**
+ * Ссылка на готовую картинку. Владелец снова проверяется условием запроса, а
+ * не отдельной проверкой: чужой план просто не находится.
+ */
+export async function setPostImage(
+  config: DbConfig,
+  licenseId: string,
+  planId: string,
+  postNumber: number,
+  path: string,
+): Promise<boolean> {
+  const owned = await selectOne<{ id: string }>(
+    config,
+    "content_plans",
+    `id=eq.${planId}&license_id=eq.${licenseId}&select=id`,
+  );
+  if (owned === null) return false;
+
+  await update(config, "posts", `plan_id=eq.${planId}&number=eq.${String(postNumber)}`, {
+    image_path: path,
+    updated_at: new Date().toISOString(),
+  });
+  return true;
+}
+
+/** Правка поста человеком. Возвращает false, если план принадлежит другому. */
+export async function updatePost(
+  config: DbConfig,
+  licenseId: string,
+  planId: string,
+  post: GeneratedPost,
+): Promise<boolean> {
+  const owned = await selectOne<{ id: string }>(
+    config,
+    "content_plans",
+    `id=eq.${planId}&license_id=eq.${licenseId}&select=id`,
+  );
+  if (owned === null) return false;
+
+  await update(config, "posts", `plan_id=eq.${planId}&number=eq.${String(post.number)}`, {
+    payload: post,
+    publish_date: post.date,
+    platform: post.platform,
+    updated_at: new Date().toISOString(),
+  });
+  return true;
+}
+
+export async function deletePlan(
+  config: DbConfig,
+  licenseId: string,
+  planId: string,
+): Promise<boolean> {
+  const owned = await selectOne<{ id: string }>(
+    config,
+    "content_plans",
+    `id=eq.${planId}&license_id=eq.${licenseId}&select=id`,
+  );
+  if (owned === null) return false;
+
+  // Посты уходят вместе с планом: связь объявлена с каскадным удалением.
+  await remove(config, "content_plans", `id=eq.${planId}&license_id=eq.${licenseId}`);
+  return true;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidPromptVersion, PROMPT_VERSION } from "./version";
+import { isValidPromptVersion, PROMPT_VERSION } from "./version.ts";
 
 describe("версия промпта", () => {
   it("имеет корректный формат", () => {

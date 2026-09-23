@@ -1,5 +1,5 @@
 /**
- * Защита главного актива: промпт не должен оказаться в браузерном бандле.
+ * Что не должно оказаться в браузерном бандле: промпт и панель управления.
  *
  * Зачем именно так: в предыдущей версии клиентский модуль реэкспортировал
  * серверный промпт, и в собранном файле dist/assets/index-*.js читались
@@ -7,23 +7,31 @@
  * работало нормально. Проверка ставится до появления промпта, чтобы
  * защита существовала раньше того, что она защищает.
  *
+ * Панель управления проверяется по той же причине и тем же способом: она не
+ * «спрятана за адресом», её кода в клиентской сборке нет вовсе, и утверждать это
+ * можно только проверкой готовых файлов.
+ *
  * Запуск: node scripts/bundle-guard.mjs
  */
 import { readdir, readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
 /**
- * Фразы-маркеры. Пополняется на этапе 1 вместе с блоками промпта.
- * Маркер должен быть достаточно характерным, чтобы не совпасть случайно.
+ * Фразы-маркеры лежат в отдельном файле, потому что их читают двое: этот
+ * скрипт и тест, проверяющий, что каждая фраза действительно есть в промпте.
+ * Без такого теста список тихо устареет после первой правки формулировок,
+ * и проверка станет декорацией.
  */
-export const PROMPT_MARKERS = [
-  "Senior Content Architect",
-  "Zero Click Value",
-  "Surreal Absurdity",
-  "Analog Nostalgia",
-  "NEUROIZIUM_PROMPT_MARKER",
-];
+// Путь считается от корня проекта, а не от адреса этого модуля: под тестовым
+// запуском адрес модуля не является файловым, и чтение по нему падает.
+const markersPath = path.resolve(process.cwd(), "scripts/prompt-leak-markers.json");
+
+const markerFile = JSON.parse(readFileSync(markersPath, "utf8"));
+
+export const PROMPT_MARKERS = markerFile.markers;
+export const ADMIN_MARKERS = markerFile.adminMarkers;
 
 const SCANNED_EXTENSIONS = new Set([".js", ".mjs", ".css", ".map", ".html"]);
 
@@ -58,10 +66,15 @@ async function main() {
   }
 
   const leaks = [];
+  const adminLeaks = [];
   for (const file of files) {
     const content = await readFile(file, "utf8");
+    const shortName = path.relative(distDirectory, file);
     for (const marker of findMarkers(content)) {
-      leaks.push({ file: path.relative(distDirectory, file), marker });
+      leaks.push({ file: shortName, marker });
+    }
+    for (const marker of findMarkers(content, ADMIN_MARKERS)) {
+      adminLeaks.push({ file: shortName, marker });
     }
   }
 
@@ -75,7 +88,22 @@ async function main() {
     return;
   }
 
-  console.log(`Промпт в бандле не найден. Проверено файлов: ${files.length}.`);
+  if (adminLeaks.length > 0) {
+    console.error("Панель управления попала в клиентскую сборку. Сборка остановлена.\n");
+    for (const leak of adminLeaks) {
+      console.error(`  ${leak.file} — найдено: «${leak.marker}»`);
+    }
+    console.error(
+      "\nПричина: страница админки достижима из клиентских маршрутов. Она должна\n" +
+        "подключаться только под признаком ADMIN_ENABLED, а собираться командой npm run build:admin.",
+    );
+    process.exit(1);
+    return;
+  }
+
+  console.log(
+    `Ни промпта, ни панели управления в бандле нет. Проверено файлов: ${files.length}.`,
+  );
 }
 
 // CLI-часть запускается только при прямом вызове, чтобы тест мог

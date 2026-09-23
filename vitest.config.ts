@@ -11,12 +11,14 @@ export default defineConfig({
     include: [
       "src/**/*.{test,spec}.{ts,tsx}",
       "server/**/*.{test,spec}.ts",
+      "contracts/**/*.{test,spec}.ts",
       "scripts/**/*.test.mjs",
     ],
   },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
+      "@contracts": path.resolve(import.meta.dirname, "./contracts"),
     },
   },
 });

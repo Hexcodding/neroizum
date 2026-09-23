@@ -11,6 +11,9 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
+    // Интерфейс импортирует общий словарь, а внутри него пути записаны с
+    // расширением .ts ради Deno. Сборщик такие пути понимает.
+    "allowImportingTsExtensions": true,
 
     "strict": true,
     "noImplicitAny": true,
@@ -21,10 +24,12 @@
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
 
-    "types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom/vitest"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@contracts": ["./contracts/index.ts"],
+      "@contracts/*": ["./contracts/*"]
     }
   },
   "include": ["src"]

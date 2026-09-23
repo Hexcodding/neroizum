@@ -1,6 +1,7 @@
 # Зависимости и сборка
 node_modules/
 dist/
+dist-admin/
 dist-ssr/
 *.local
 
@@ -12,6 +13,9 @@ dist-ssr/
 # Выгрузки базы данных — хранятся вне репозитория
 backups/
 
+# Служебные файлы Supabase CLI: привязка к конкретному проекту, у каждого своя
+supabase/.temp/
+
 # Служебное
 .DS_Store
 Thumbs.db
@@ -22,3 +26,4 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.netlify
