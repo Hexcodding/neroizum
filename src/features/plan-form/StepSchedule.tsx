@@ -15,7 +15,7 @@ export function StepSchedule({ state }: { state: PlanDraftState }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Field label="На какой срок">
+      <Field label="На какой срок?">
         {() => (
           <SingleChoice
             label="Период плана"
@@ -29,7 +29,7 @@ export function StepSchedule({ state }: { state: PlanDraftState }) {
         )}
       </Field>
 
-      <Field label="Как часто готовы публиковать" hint="Лучше меньше, но регулярно: невыполненный план хуже короткого.">
+      <Field label="Как часто готовы публиковать?" hint="Лучше меньше, но регулярно: стабильность важнее количества постов.">
         {() => (
           <SingleChoice
             label="Частота публикаций"
@@ -43,7 +43,7 @@ export function StepSchedule({ state }: { state: PlanDraftState }) {
         )}
       </Field>
 
-      <Field label="Начинаем с" error={errors.startDate}>
+      <Field label="С какой даты начнем?" error={errors.startDate}>
         {({ id, describedBy, invalid }) => (
           <Input
             id={id}
@@ -68,7 +68,7 @@ export function StepSchedule({ state }: { state: PlanDraftState }) {
 
       <CheckboxCard
         label="Информационный режим"
-        description="Посты пишутся как рассказ о деятельности, без рекламных призывов и обещаний результата. Нужен там, где реклама ограничена законом: медицина, финансы, образование."
+        description="Посты пишутся как рассказ о деятельности, без рекламных призывов и обещаний результата. Режим для нативного контента."
         checked={draft.infoPlanMode}
         onChange={(checked) => {
           set("infoPlanMode", checked);

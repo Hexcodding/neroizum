@@ -35,7 +35,7 @@ export interface Option<T extends string> {
 const GOAL_NOTES: Readonly<Record<GoalId, string>> = {
   sales: "Больше продающих постов и прямых предложений",
   reach: "Больше вовлекающего: репосты, обсуждения, новые люди",
-  loyalty: "Больше экспертного и закулисья: чтобы вам поверили",
+  loyalty: "Больше экспертного и закулисья: чтобы сформировать доверие",
 };
 
 export const GOAL_OPTIONS: readonly Option<GoalId>[] = GOAL_IDS.map((id) => ({

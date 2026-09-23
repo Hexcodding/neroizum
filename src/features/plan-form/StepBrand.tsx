@@ -31,7 +31,7 @@ export function StepBrand({ state }: { state: PlanDraftState }) {
       </p>
 
       <Field
-        label="Как вы звучите"
+        label="Как вы звучите?"
         optional
         hint="Например: «просто, без пафоса, с юмором, обращаемся на ты»."
       >
@@ -49,7 +49,7 @@ export function StepBrand({ state }: { state: PlanDraftState }) {
       </Field>
 
       <Field
-        label="Что вы продаёте"
+        label="Что вы продаёте?"
         optional
         hint="Перечислите продукты и цены. Того, чего здесь нет, в постах не появится — модель не станет придумывать акции за вас."
       >
@@ -67,7 +67,7 @@ export function StepBrand({ state }: { state: PlanDraftState }) {
       </Field>
 
       <Field
-        label="Чем докажете"
+        label="Почему вам стоит доверять?"
         optional
         hint="Опыт, цифры, отзывы, кейсы. Это попадёт в посты как основание, а не как хвастовство."
       >
@@ -85,7 +85,7 @@ export function StepBrand({ state }: { state: PlanDraftState }) {
       </Field>
 
       <Field
-        label="Слова, которых быть не должно"
+        label="Каких слов быть не должно?"
         optional
         hint="Через запятую. Например: «уникальный, инновационный, лучший в мире»."
       >
@@ -102,7 +102,7 @@ export function StepBrand({ state }: { state: PlanDraftState }) {
       </Field>
 
       <Field
-        label="Образец вашего текста"
+        label="Пример вашего поста"
         optional
         hint="Один-два ваших поста целиком. Копируется ритм и манера, а не темы."
       >

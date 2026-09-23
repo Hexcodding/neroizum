@@ -60,7 +60,7 @@ export const POSTS_PER_WEEK_LABELS: Readonly<Record<PostsPerWeek, string>> = {
   2: "2 поста в неделю",
   3: "3 поста в неделю",
   5: "5 постов в неделю",
-  7: "каждый день",
+  7: "Каждый день",
 };
 
 export const PERIOD_DAYS_OPTIONS = [7, 14, 30] as const;

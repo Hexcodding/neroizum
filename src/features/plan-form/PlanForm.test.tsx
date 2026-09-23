@@ -45,7 +45,7 @@ describe("мастер заявки", () => {
     fill(/Для кого вы пишете/, AUDIENCE);
     next();
 
-    expect(screen.getByText("Где публикуете")).toBeInTheDocument();
+    expect(screen.getByText("Где публикуете?")).toBeInTheDocument();
   });
 
   it("заполненное не теряется при перезагрузке страницы", () => {

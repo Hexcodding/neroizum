@@ -16,7 +16,7 @@ export function StepBusiness({ state }: { state: PlanDraftState }) {
   return (
     <div className="flex flex-col gap-5">
       <Field
-        label="Чем вы занимаетесь"
+        label="Чем вы занимаетесь?"
         hint="Своими словами: что продаёте, где находитесь, чем отличаетесь. Например: «Домашняя пекарня в Химках, хлеб на закваске, печём под заказ, доставка по району»."
         error={errors.niche}
       >
@@ -39,7 +39,7 @@ export function StepBusiness({ state }: { state: PlanDraftState }) {
       <CharacterCount value={draft.niche} limit={INPUT_LIMITS.niche} />
 
       <Field
-        label="Для кого вы пишете"
+        label="Для кого вы пишете?"
         hint="Кто эти люди и что их волнует. Например: «Семьи с детьми из соседних домов, следят за составом, некогда готовить»."
         error={errors.audience}
       >

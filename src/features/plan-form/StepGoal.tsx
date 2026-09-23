@@ -13,7 +13,7 @@ export function StepGoal({ state }: { state: PlanDraftState }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Field label="Чего хотите добиться" hint="От этого зависит, каких постов в плане будет больше.">
+      <Field label="Чего вы хотите добиться?" hint="От этого зависит, каких постов в плане будет больше.">
         {() => (
           <SingleChoice
             label="Цель плана"
@@ -28,7 +28,7 @@ export function StepGoal({ state }: { state: PlanDraftState }) {
       </Field>
 
       <Field
-        label="Где публикуете"
+        label="Где публикуете?"
         hint="Для каждой площадки текст пишется по своим правилам: длина, формат, подача."
         error={errors.platforms}
       >
@@ -47,7 +47,7 @@ export function StepGoal({ state }: { state: PlanDraftState }) {
         )}
       </Field>
 
-      <Field label="Сейчас у вас" hint="Начинающему каналу нужны другие посты, чем каналу с десятью тысячами.">
+      <Field label="Сколько у вас подписчиков?" hint="Начинающему каналу нужен иной подход, чем блогу на десять тысяч.">
         {() => (
           <SingleChoice
             label="Стадия проекта"
@@ -61,7 +61,7 @@ export function StepGoal({ state }: { state: PlanDraftState }) {
         )}
       </Field>
 
-      <Field label="От чьего имени говорим">
+      <Field label="От чьего имени говорим?">
         {() => (
           <SingleChoice
             label="Роль автора"
